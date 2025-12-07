@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, maximum-scale=5.0">
     <title>Wonderxam</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -87,21 +87,45 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .app-shell { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
-        .main-area { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg); }
+        /* Updated App Shell for Layout */
+        .app-shell { 
+            display: flex; 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden;
+            padding: 0; /* Remove padding from shell */
+            gap: 0; 
+        }
+
+        /* Updated Main Area Panel - Full Size, No Card Style */
+        .main-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            position: relative; 
+            background: var(--bg);
+            border-radius: 0; 
+            border: none;
+            overflow: hidden; 
+        }
+
         .top-bar { height: 64px; display: flex; align-items: center; padding: 0 24px; background: var(--bg); border-bottom: 1px solid transparent; flex-shrink: 0; z-index: 300; position: relative; }
         .top-bar::after { content: ''; position: absolute; left: 0; right: 14px; bottom: -24px; height: 24px; background: linear-gradient(to bottom, var(--bg), transparent); pointer-events: none; }
         .doc-title { font-family: 'Google Sans', sans-serif; font-size: 20px; background: transparent; border: 1px solid transparent; padding: 6px 12px; border-radius: 8px; width: 100%; max-width: 400px; outline: none; transition: 0.2s; }
         .doc-title:hover { background: #e9d5ff; }
         .doc-title:focus { background: white; border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .viewport { flex: 1; overflow: auto; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px; }
+        .viewport { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px; }
         .pages-scale-wrapper { display: flex; flex-direction: column; gap: 40px; transform-origin: top center; transition: transform 0.1s linear; }
-        .a4-page { width: 794px; height: 1123px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; box-sizing: border-box; }
+        .a4-page { width: 794px; height: 1123px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: visible; box-sizing: border-box; border-radius: 6px; }
         
+        /* Grid Lines */
         .grid-lines { 
-            position: absolute; inset: 0; pointer-events: none; z-index: 0; 
-            background-image: linear-gradient(to right, #f3e8ff 1px, transparent 1px), linear-gradient(to bottom, #f3e8ff 1px, transparent 1px);
-            border: 1px dashed #d8b4fe; 
+            position: absolute; 
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            pointer-events: none; z-index: 0; 
+            background-color: transparent;
+            border: none; 
         }
 
         /* Occupied/Ghost Styles */
@@ -109,7 +133,7 @@
             position: absolute;
             background-color: #e5e7eb; /* Gray */
             opacity: 0.5;
-            border-radius: 4px;
+            border-radius: 6px;
             pointer-events: none;
             z-index: 1;
         }
@@ -118,7 +142,7 @@
             position: absolute;
             background-color: rgba(139, 92, 246, 0.2); /* Purple tint */
             border: 2px dashed var(--primary);
-            border-radius: 4px;
+            border-radius: 6px;
             pointer-events: none;
             z-index: 50; /* Above static blocks (10), below drag (1000) */
             transition: all 0.1s;
@@ -128,9 +152,25 @@
             border-color: #ef4444;
         }
 
-        .sidebar { width: 320px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50; padding: 20px; gap: 16px; box-shadow: -2px 0 10px rgba(0,0,0,0.02); }
+        /* Updated Sidebar: Floating Card Style with Margins */
+        .sidebar { 
+            width: 340px; 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            border-radius: 24px; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 50; 
+            padding: 20px 16px; 
+            gap: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            
+            /* Floating Positioning */
+            margin: 16px 16px 16px 0; /* Top Right Bottom Left */
+            height: calc(100vh - 32px);
+        }
         
-        .block-wrapper { position: absolute; background: white; border: 1px solid transparent; border-radius: 4px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s; z-index: 10; }
+        .block-wrapper { position: absolute; background: white; border: 1px solid transparent; border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s; z-index: 10; }
         .block-wrapper:hover { background-color: #fafafa; border-color: #ddd; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .block-wrapper.dragging { transition: none !important; z-index: 1000 !important; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; border-color: var(--primary) !important; background: white; }
         
@@ -168,10 +208,48 @@
         .btn-primary:disabled { opacity: 0.7; cursor: default; }
         .fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
         
+        /* INHOUSE BADGE STYLES */
+        .inhouse-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            color: var(--text-sub); 
+            user-select: none;
+            pointer-events: none;
+        }
+        .inhouse-badge svg {
+            width: 24px;
+            height: 14px;
+            stroke-width: 6;
+            stroke: #d97736; /* Brand Copper */
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .inhouse-badge span {
+            font-family: 'Comfortaa', cursive;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
         @media (max-width: 1024px) {
-            .app-shell { flex-direction: column; }
-            .sidebar { display: none; }
-            .sidebar.open { display: flex; position: fixed; bottom: 90px; right: 24px; width: 300px; max-height: 60vh; overflow-y: auto; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.2); animation: slideUp 0.2s ease; }
+            .app-shell { flex-direction: column; padding: 0; gap: 0; }
+            .main-area { border-radius: 0; border: none; }
+            .sidebar { 
+                display: none; 
+                width: 100%; 
+                border-radius: 24px 24px 0 0;
+                border: none;
+                box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+                margin: 0;
+                height: auto;
+            }
+            .sidebar.open { display: flex; position: fixed; bottom: 90px; right: 24px; width: 300px; max-height: 60vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.2); animation: slideUp 0.2s ease; border: 1px solid var(--border); }
             .fab { display: flex; }
             .top-bar { padding: 0 16px; }
             .viewport { padding: 20px 10px; }
@@ -182,7 +260,8 @@
         .exporting .export-only { display: block; white-space: pre-wrap; }
         .exporting .hide-on-export { display: none !important; }
         .exporting .a4-page { margin: 0; box-shadow: none; border-radius: 0; }
-        .exporting .grid-lines { display: none; }
+        /* When exporting, hide the grid and snap ghosts */
+        .exporting .grid-layer { display: none; }
         .exporting .occupied-space, .exporting .snap-ghost { display: none; }
     </style>
 </head>
@@ -192,7 +271,7 @@
     <script type="text/babel">
         const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
 
-        const MatIcon = ({ name }) => <span className="mat-icon material-symbols-rounded">{name}</span>;
+        const MatIcon = ({ name, className="" }) => <span className={`mat-icon material-symbols-rounded ${className}`}>{name}</span>;
 
         // --- CONFIG ---
         const PX_PER_MM = 3.7795275591;
@@ -227,20 +306,90 @@
             { label: 'Large', val: 125 }
         ];
 
+        // --- NEW GRID COMPONENT FOR ANIMATED DOTS ---
+        const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
+            // Generate all potential grid points (vertices) for this page
+            const points = useMemo(() => {
+                const pts = [];
+                // Rows: 0 to ROWS (inclusive to cover bottom edge)
+                for (let r = 0; r <= ROWS; r++) {
+                    // Cols: 0 to COLS (inclusive)
+                    for (let c = 0; c <= COLS; c++) {
+                        pts.push({ c, r });
+                    }
+                }
+                return pts;
+            }, []);
+
+            return (
+                <div className="grid-layer absolute inset-0 pointer-events-none z-0">
+                    {points.map((pt, i) => {
+                        // Check coverage dynamically in map to allow animation of state change
+                        const globalRow = pageIndex * ROWS + pt.r;
+                        const col = pt.c;
+                        
+                        let isCovered = false;
+                        for (let b of blocks) {
+                            // SKIP COVERAGE CHECK FOR DRAGGING BLOCK - Show grid under it!
+                            if (draggingBlockId && b.id === draggingBlockId) continue;
+
+                            // Check if point is within the block's vertex bounds (inclusive)
+                            if (
+                                col >= b.x && col <= b.x + b.w &&
+                                globalRow >= b.y && globalRow <= b.y + b.h
+                            ) {
+                                isCovered = true;
+                                break;
+                            }
+                        }
+
+                        return (
+                            <div 
+                                key={i}
+                                style={{
+                                    position: 'absolute',
+                                    left: pt.c * CELL - 2, // Center the 4px dot (-2)
+                                    top: pt.r * CELL - 2,
+                                    width: 4, 
+                                    height: 4, 
+                                    borderRadius: '50%', 
+                                    backgroundColor: '#cbd5e1', // slate-300
+                                    opacity: isCovered ? 0 : 1, // Fade logic
+                                    transition: 'opacity 0.4s ease', // Gentle fade animation
+                                    willChange: 'opacity' // Performance hint
+                                }}
+                            />
+                        );
+                    })}
+                </div>
+            );
+        });
+
         // --- COMPONENTS ---
 
-        const RichInput = ({ value, onChange, placeholder, minH="auto", image, onImg, contentRef }) => {
-            const f = useRef(null);
+        const RichInput = ({ value, onChange, placeholder, minH="1.2em", image, onImg, contentRef, className="" }) => {
+            const innerRef = useRef(null);
+            const ref = contentRef || innerRef; 
+
+            // Auto-resize logic internal to RichInput
+            useLayoutEffect(() => {
+                if(ref.current) {
+                    ref.current.style.height = 'auto'; // Reset to shrink if needed
+                    ref.current.style.height = ref.current.scrollHeight + 'px';
+                }
+            }, [value]);
+
             return (
-                <div className="w-full h-full flex flex-col group/input relative">
-                    <div className="flex-1 flex items-start gap-2 h-full">
+                <div className="w-full flex flex-col group/input relative">
+                    <div className="flex-1 flex items-start gap-2">
                         <textarea 
-                            ref={contentRef}
-                            className="w-full h-full bg-transparent outline-none resize-none hide-on-export overflow-hidden"
+                            ref={ref}
+                            rows={1} // FORCE 1 ROW DEFAULT
+                            className={`w-full bg-transparent outline-none resize-none hide-on-export overflow-hidden p-0 leading-normal ${className}`}
                             placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}
-                            style={{minHeight: minH}}
+                            style={{minHeight: minH, lineHeight: '1.5em'}}
                         />
-                        <div className="export-only w-full whitespace-pre-wrap" style={{minHeight: minH}}>{value}</div>
+                        <div className="export-only w-full whitespace-pre-wrap leading-normal" style={{minHeight: minH, lineHeight: '1.5em'}}>{value}</div>
                         
                         {onImg && (
                             <div className="absolute right-0 top-0 opacity-0 group-hover/input:opacity-100 transition no-export z-10">
@@ -263,8 +412,6 @@
             const contentRef = useRef(null);
             
             useLayoutEffect(() => {
-                // If we are strictly resizing (drag.active), we check for overflow but DO NOT auto-resize
-                // We just report status
                 if (!contentRef.current || ['line', 'image', 'space'].includes(b.type)) return;
                 
                 const timer = setTimeout(() => {
@@ -273,32 +420,31 @@
                     // Current height in pixels (if resizing, b.h is the ghost height)
                     const currentHeightPx = b.h * CELL;
                     
-                    // Check overflow
-                    // Tolerance of 4px
+                    // Check overflow tolerance of 4px
                     const isOverflowing = scrollH > currentHeightPx + 4;
                     
                     if (setContentOverflow) {
                         setContentOverflow(b.id, isOverflowing);
                     }
 
-                    // Only auto-resize if NOT currently being dragged/resized by user
-                    // This prevents fighting
                     if (!isResizing && isOverflowing) {
-                        const neededRows = Math.ceil((scrollH + 16) / CELL);
-                        handleAutoResize(b.id, neededRows);
+                        const neededRows = Math.ceil((scrollH + 8) / CELL); // Adjusted padding buffer
+                        // Prevent needless updates if calculated rows are same
+                        if (neededRows > b.h) {
+                            handleAutoResize(b.id, neededRows);
+                        }
                     }
-                }, 50);
+                }, 10);
                 return () => clearTimeout(timer);
             }, [b.data, fontSizeMultiplier, b.w, b.h, isResizing]); 
 
-            // Disable add option if:
-            // 1. We are already overflowing (invalid state)
-            // 2. OR Current height is equal to or greater than available space (can't grow)
-            const canAddOption = !isResizing && !(b.h >= maxAvailableH);
+            // Disable add option if resizing or if strictly constrained manually 
+            // But we allow auto-grow now, so we mostly check if it would exceed page
+            const canAddOption = !isResizing && !(b.h >= ROWS);
 
             switch(b.type) {
                 case 'header': return (
-                    <div ref={contentRef} className="p-2 flex flex-col gap-4">
+                    <div ref={contentRef} className="p-1 flex flex-col gap-4">
                         <div className="flex gap-3">
                             <div className="w-16 h-16 border border-dashed rounded flex items-center justify-center bg-gray-50 shrink-0 relative group">
                                 {b.data.logo ? <img src={b.data.logo} className="w-full h-full object-contain"/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>LOGO</span>}
@@ -314,7 +460,7 @@
                         </div>
                     </div>
                 );
-                case 'text': return <div className="p-2 h-full"><RichInput contentRef={contentRef} value={b.data.text} onChange={v=>update(b.id,{data:{...b.data, text:v}})} placeholder="Instructions..." /></div>;
+                case 'text': return <div className="p-1 h-full"><RichInput contentRef={contentRef} value={b.data.text} onChange={v=>update(b.id,{data:{...b.data, text:v}})} placeholder="Instructions..." /></div>;
                 case 'line': return <div className="w-full h-full flex items-center justify-center px-2"><div className="w-full border-b border-black"></div></div>;
                 case 'image': return (
                     <div className="w-full h-full bg-gray-50 flex items-center justify-center relative group">
@@ -323,17 +469,38 @@
                     </div>
                 );
                 case 'mcq': return (
-                    <div ref={contentRef} className="p-2 h-full flex flex-col">
-                        <div className="flex gap-2 mb-1">
-                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
-                            <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Question"/></div>
+                    <div ref={contentRef} className="p-1 flex flex-col">
+                        <div className="flex gap-2 mb-1 items-baseline">
+                             {/* items-baseline is KEY for aligning text with number */}
+                            <input className="w-6 font-bold bg-transparent outline-none text-right pt-1.5" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <div className="flex-1">
+                                <RichInput 
+                                    value={b.data.q} 
+                                    onChange={v=>update(b.id,{data:{...b.data,q:v}})} 
+                                    placeholder="Question"
+                                    className="border-b border-transparent focus:border-purple-300"
+                                />
+                            </div>
                         </div>
-                        <div className="pl-8 flex-1 flex flex-col gap-1">
+                        <div className="pl-8 flex-1 flex flex-col gap-0">
                             {b.data.opts.map((o,i)=>(
-                                <div key={i} className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full border border-gray-400"></div>
-                                    <span className="font-bold" style={{fontSize: '0.8em'}}>{String.fromCharCode(65+i)}.</span>
-                                    <input className="flex-1 bg-transparent border-b border-transparent focus:border-purple-300 outline-none" value={o} onChange={e=>{const n=[...b.data.opts];n[i]=e.target.value;update(b.id,{data:{...b.data,opts:n}})}} />
+                                <div key={i} className="flex items-start gap-2 group/opt">
+                                    <div className="w-4 h-4 border border-gray-400 bg-white mt-1 shrink-0"></div>
+                                    <span className="font-bold mt-0.5" style={{fontSize: '0.8em'}}>{String.fromCharCode(65+i)}.</span>
+                                    <div className="flex-1">
+                                        <RichInput 
+                                            value={o} 
+                                            onChange={v=>{const n=[...b.data.opts];n[i]=v;update(b.id,{data:{...b.data,opts:n}})}} 
+                                            minH="1.2em"
+                                            className="border-b border-transparent focus:border-purple-300"
+                                        />
+                                    </div>
+                                    <button onClick={() => {
+                                        const n = b.data.opts.filter((_, idx) => idx !== i);
+                                        update(b.id, {data: {...b.data, opts: n}});
+                                    }} className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover/opt:opacity-100 no-export mt-1">
+                                        <MatIcon name="close" className="text-[16px]" />
+                                    </button>
                                 </div>
                             ))}
                             <button 
@@ -351,23 +518,27 @@
                     </div>
                 );
                 case 'short': return (
-                    <div ref={contentRef} className="p-2 h-full flex flex-col">
-                        <div className="flex gap-2 mb-1">
-                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                    <div ref={contentRef} className="p-1 flex flex-col">
+                        <div className="flex gap-2 mb-1 items-baseline">
+                             <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
                             <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Question"/></div>
-                        </div>
-                        <div className="pl-8 mt-auto space-y-3">
-                            {Array(3).fill(0).map((_,i)=><div key={i} className="border-b border-gray-300 w-full h-px"></div>)}
                         </div>
                     </div>
                 );
                 case 'tf': return (
-                    <div ref={contentRef} className="p-2 h-full flex flex-col">
-                        <div className="flex gap-2 mb-1">
-                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                    <div ref={contentRef} className="p-1 flex flex-col">
+                        <div className="flex gap-2 mb-1 items-baseline">
+                             <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
                             <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Statement"/></div>
                         </div>
-                        <div className="pl-8 mt-2 font-mono" style={{fontSize: '0.8em'}}>[ ] True &nbsp;&nbsp; [ ] False</div>
+                        <div className="pl-8 mt-2 flex gap-6" style={{fontSize: '0.8em'}}>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border border-gray-400 bg-white"></div> <span>True</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border border-gray-400 bg-white"></div> <span>False</span>
+                            </div>
+                        </div>
                     </div>
                 );
             }
@@ -381,7 +552,7 @@
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [exporting, setExporting] = useState(false);
             const [title, setTitle] = useState("Untitled Exam");
-            const [overflowMap, setOverflowMap] = useState({}); // Track overflow state of blocks
+            const [overflowMap, setOverflowMap] = useState({});
 
             const containerRef = useRef(null);
             
@@ -396,33 +567,45 @@
                 origY: 0, 
                 origW: 0, 
                 origH: 0,
-                // Ghost Resize/Move values (Visual only)
                 resizeW: 0,
                 resizeH: 0,
                 snapX: 0,
                 snapY: 0,
-                
                 deltaX: 0, 
                 deltaY: 0,
-                
                 isValid: true,
                 collidingIds: [] 
             });
+
+            // Calculate Max Height for Auto-Expansion
+            const getMaxHeight = useCallback((b) => {
+                const p = Math.floor(b.y / ROWS);
+                const pageEnd = (p + 1) * ROWS;
+                let limit = pageEnd - b.y; 
+                return 1000; // Allow huge expansion because we push things away
+            }, [blocks]);
 
             // Auto Zoom on Mount
             useLayoutEffect(() => {
                 const fit = () => {
                     if(!containerRef.current) return;
                     const w = containerRef.current.clientWidth;
-                    if(w < 850) setZoom((w - 40) / A4_W);
-                    else setZoom(1);
+                    const horizontalPadding = 40; // 20px left + 20px right in .viewport
+                    const fullPageWidth = A4_W + horizontalPadding;
+
+                    if (w < fullPageWidth) {
+                        const rawScale = (w - horizontalPadding) / A4_W;
+                        const safeScale = Math.max(0.1, rawScale * 0.97); // small safety factor to avoid horizontal scroll
+                        setZoom(safeScale);
+                    } else {
+                        setZoom(1);
+                    }
                 };
                 window.addEventListener('resize', fit);
                 fit();
                 return () => window.removeEventListener('resize', fit);
             }, []);
 
-            // Determine Pages
             const totalPages = useMemo(() => {
                 let maxY = 0;
                 blocks.forEach(b => { if(b.y + b.h > maxY) maxY = b.y + b.h; });
@@ -438,26 +621,78 @@
                 });
             }, []);
 
-            // Calculate Max Height for Auto-Expansion (Used by BlockContent)
-            const getMaxHeight = (b) => {
-                const p = Math.floor(b.y / ROWS);
-                const pageEnd = (p + 1) * ROWS;
-                let limit = pageEnd - b.y; // Max height to page bottom
+            // Auto-Resize Logic with PUSH
+            const handleAutoResize = (id, newH) => {
+                const clampedH = Math.min(newH, ROWS);
+                
+                setBlocks(prev => {
+                    const idx = prev.findIndex(b => b.id === id);
+                    if(idx === -1) return prev;
+                    
+                    const b = prev[idx];
+                    if(b.h === clampedH) return prev;
 
-                for (let other of blocks) {
-                    if (other.id === b.id) continue;
-                    // Check horizontal overlap
-                    if (!(b.x + b.w <= other.x || b.x >= other.x + other.w)) {
-                        // Check if other is below
-                        if (other.y >= b.y + b.h) { 
-                            const dist = other.y - b.y;
-                            if (dist < limit) limit = dist;
+                    // Deep copy
+                    const newBlocks = JSON.parse(JSON.stringify(prev));
+                    const block = newBlocks[idx];
+                    block.h = clampedH;
+                    
+                    // Page boundary logic for the growing block
+                    const currentRow = block.y;
+                    const pageIndex = Math.floor(currentRow / ROWS);
+                    const pageStart = pageIndex * ROWS;
+                    const pageEnd = (pageIndex + 1) * ROWS;
+                    
+                    if (currentRow + clampedH > pageEnd) {
+                        if (currentRow !== pageStart) {
+                             block.y = (pageIndex + 1) * ROWS;
                         }
-                        // If they overlap already, limit is effectively 0 or negative relative to b.h
-                        // which means we definitely can't grow
                     }
-                }
-                return Math.max(b.h, limit); // At least current height
+
+                    // Push logic (Recursive)
+                    const pushDown = (pusherId) => {
+                        const pusher = newBlocks.find(x => x.id === pusherId);
+                        
+                        newBlocks.forEach(victim => {
+                            if (victim.id === pusher.id) return;
+                            
+                            // Check Horizontal Overlap
+                            const isHorizOverlapping = !(victim.x + victim.w <= pusher.x || victim.x >= pusher.x + pusher.w);
+                            
+                            if (isHorizOverlapping) {
+                                // Check Vertical Overlap
+                                // If victim is "visually" overlapping the new area of pusher
+                                if (victim.y < pusher.y + pusher.h && victim.y + victim.h > pusher.y) {
+                                    
+                                    // Move victim down
+                                    const neededY = pusher.y + pusher.h;
+                                    const diff = neededY - victim.y;
+                                    
+                                    if (diff > 0) {
+                                        victim.y += diff;
+                                        
+                                        // Check page boundary for victim
+                                        const vPageIndex = Math.floor(victim.y / ROWS);
+                                        const vPageEnd = (vPageIndex + 1) * ROWS;
+                                        
+                                        if (victim.y + victim.h > vPageEnd) {
+                                            const vPageStart = vPageIndex * ROWS;
+                                            if (victim.y !== vPageStart) {
+                                                victim.y = (vPageIndex + 1) * ROWS;
+                                            }
+                                        }
+                                        
+                                        // Recursively push things below this victim
+                                        pushDown(victim.id);
+                                    }
+                                }
+                            }
+                        });
+                    };
+
+                    pushDown(block.id);
+                    return newBlocks;
+                });
             };
 
             // Add Block
@@ -467,12 +702,12 @@
                 const qNum = blocks.filter(b=>['mcq','short','tf'].includes(b.type)).length + 1;
 
                 if(type==='header'){w=18;h=5; data={inst:'', title:'', logo:null};}
-                else if(type==='text'){w=18;h=2; data={text:''};}
+                else if(type==='text'){w=18;h=1; data={text:''};} // Default to 1 line
                 else if(type==='line'){w=18;h=1; data={};}
                 else if(type==='image'){w=6;h=6; data={src:null};}
-                else if(type==='mcq'){w=18;h=3; data={num:qNum+'.', q:'', opts:['','']};}
-                else if(type==='short'){w=18;h=3; data={num:qNum+'.', q:''};}
-                else if(type==='tf'){w=18;h=2; data={num:qNum+'.', q:''};}
+                else if(type==='mcq'){w=18;h=1; data={num:qNum+'.', q:'', opts:['']};} // 1 line, 1 option default
+                else if(type==='short'){w=18;h=2; data={num:qNum+'.', q:''};} // 1 line
+                else if(type==='tf'){w=18;h=1; data={num:qNum+'.', q:''};} // 1 line
 
                 let y = 0;
                 let found = false;
@@ -499,50 +734,6 @@
             const updateBlock = (id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b));
             const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id!==id));
 
-            const handleAutoResize = (id, newH) => {
-                const clampedH = Math.min(newH, ROWS);
-                setBlocks(prev => {
-                    const idx = prev.findIndex(b => b.id === id);
-                    if(idx === -1) return prev;
-                    
-                    const b = prev[idx];
-                    if(b.h === clampedH) return prev;
-
-                    // Calculate proposed block
-                    const block = {...b, h: clampedH}; 
-                    
-                    const currentRow = block.y;
-                    const pageIndex = Math.floor(currentRow / ROWS);
-                    const pageStart = pageIndex * ROWS;
-                    const pageEnd = (pageIndex + 1) * ROWS;
-                    
-                    if (currentRow + clampedH > pageEnd) {
-                        if (currentRow !== pageStart) {
-                             block.y = (pageIndex + 1) * ROWS;
-                        }
-                    }
-
-                    // COLLISION CHECK
-                    let collision = false;
-                    for(let other of prev) {
-                        if(other.id === id) continue;
-                        const isOver = !(
-                            block.x + block.w <= other.x || 
-                            block.x >= other.x + other.w || 
-                            block.y + block.h <= other.y || 
-                            block.y >= other.y + other.h
-                        );
-                        if(isOver) { collision = true; break; }
-                    }
-
-                    if(collision) return prev; // Deny resize
-
-                    const newBlocks = [...prev];
-                    newBlocks[idx] = block;
-                    return newBlocks;
-                });
-            };
-
             const startDrag = (e, id, mode) => {
                 e.preventDefault(); 
                 if(e.type==='touchstart') return;
@@ -557,13 +748,10 @@
                     origY: b.y, 
                     origW: b.w, 
                     origH: b.h,
-                    
-                    // Init Ghost Props
                     resizeW: b.w,
                     resizeH: b.h,
                     snapX: b.x,
                     snapY: b.y,
-
                     deltaX: 0, 
                     deltaY: 0,
                     isValid: true,
@@ -583,15 +771,12 @@
 
                     let valid = true;
                     const collisions = [];
-                    // Exclude self from collision check
                     const otherBlocks = blocks.filter(b => b.id !== drag.id);
 
                     if(drag.mode === 'move') {
-                        // Calculate Snap Targets
                         let nx = Math.max(0, Math.min(COLS - drag.origW, drag.origX + gridDx));
                         let ny = Math.max(0, drag.origY + gridDy); 
                         
-                        // Page Snap
                         const startPage = Math.floor(ny / ROWS);
                         const endPage = Math.floor((ny + drag.origH - 1) / ROWS);
                         if(startPage !== endPage) {
@@ -601,7 +786,6 @@
                             else ny = prevPageEnd;
                         }
 
-                        // Check Validity (Collision)
                         for(let ob of otherBlocks) {
                             const isOver = !(
                                 nx + drag.origW <= ob.x || 
@@ -615,7 +799,6 @@
                             }
                         }
 
-                        // Update drag state WITHOUT changing blocks
                         setDrag(prev => ({
                             ...prev, 
                             deltaX: dX, 
@@ -663,20 +846,10 @@
                 
                 const up = () => {
                     if(drag.active) {
-                        // Only commit if Valid
-                        // AND we also check for text overflow state via map if we are resizing
-                        // Actually, if text overflow happens, we don't commit? 
-                        // Or we rely on auto-snap back? 
-                        // The prompt asked "dont let me do so". 
-                        // If we don't commit, it snaps back. Perfect.
-                        
-                        // Check explicit collision validity
                         if(drag.isValid) {
-                            if (drag.mode === 'move') {
+                            if(drag.mode === 'move') {
                                 updateBlock(drag.id, {x: drag.snapX, y: drag.snapY});
                             } else {
-                                // For resize, check if content overflows in the new size
-                                // We check the map
                                 const isOverflowing = overflowMap[drag.id];
                                 if (!isOverflowing) {
                                     updateBlock(drag.id, {w: drag.resizeW, h: drag.resizeH});
@@ -695,7 +868,6 @@
                 return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
             }, [drag, blocks, zoom, overflowMap]);
 
-            // Export
             const doExport = async () => {
                 setExporting(true);
                 setSidebarOpen(false);
@@ -728,8 +900,11 @@
                                 {Array.from({length: totalPages}).map((_, i) => (
                                     <div key={i} className="a4-page" style={{padding: `${MARGIN_Y}px ${MARGIN_X}px`}}>
                                         <div className="relative w-full h-full">
-                                            <div className="grid-lines" style={{backgroundSize: `${CELL}px ${CELL}px`}}></div>
                                             
+                                            {/* --- GRID LAYER (Programmatic Dots) --- */}
+                                            {/* CHANGED: Pass drag.id if active, regardless of mode (move OR resize) */}
+                                            <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
+
                                             {/* RENDER OCCUPIED GHOSTS (Gray) */}
                                             {blocks.filter(b => {
                                                 const start = b.y; const end = b.y + b.h;
@@ -769,10 +944,6 @@
                                                 const isOverflow = overflowMap[b.id] && isActive;
                                                 const isInvalid = isActive && (!drag.isValid || isOverflow);
 
-                                                // Determine Block Props for Ghosting
-                                                // If dragging (move), visual pos handled by override. W/H is static.
-                                                // If resizing, visual W/H is from drag state. Pos is static.
-                                                
                                                 let displayX = b.x;
                                                 let displayY = b.y;
                                                 let displayW = b.w;
@@ -790,13 +961,11 @@
                                                             transform: `translate(${drag.deltaX / zoom}px, ${drag.deltaY / zoom}px) scale(1.05)`,
                                                             zIndex: 999,
                                                             transition: 'none',
-                                                            opacity: 0.9 // Slight transparency to see ghost
+                                                            opacity: 0.9 
                                                         };
                                                     } else if (drag.mode === 'resize') {
-                                                        // Ghost Resize Dimensions
                                                         displayW = drag.resizeW;
                                                         displayH = drag.resizeH;
-                                                        // No transform needed for resize, just update W/H
                                                         styleOverride = {
                                                             zIndex: 999,
                                                             transition: 'none'
@@ -804,13 +973,10 @@
                                                     }
                                                 }
 
-                                                // Pass the *Ghost* dimensions to content so it can check overflow on the *proposed* size
-                                                // NOTE: displayW/H are in grid units.
                                                 const contentBlockProps = isActive && drag.mode === 'resize' 
                                                     ? { ...b, w: drag.resizeW, h: drag.resizeH } 
                                                     : b;
 
-                                                // Calculate max height for Add Option Button logic
                                                 const maxAvailableH = getMaxHeight(b);
 
                                                 return (
@@ -825,11 +991,20 @@
                                                             ...styleOverride 
                                                         }}
                                                     >
+                                                        {/* --- MASK TO HIDE DOTS --- */}
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            inset: 0,
+                                                            backgroundColor: 'white',
+                                                            zIndex: -1,
+                                                            borderRadius: '0px'
+                                                        }} />
+
                                                         <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
                                                         <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
                                                         
                                                         <BlockContent 
-                                                            b={contentBlockProps} // Pass ghost props if resizing
+                                                            b={contentBlockProps}
                                                             update={updateBlock} 
                                                             fontSizeMultiplier={docStyle.size}
                                                             handleAutoResize={handleAutoResize}
@@ -855,8 +1030,9 @@
                     </button>
 
                     <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-                        <div className="flex items-center gap-2 text-purple-700 text-xl font-normal tracking-tight px-2 mb-2">
-                            <MatIcon name="school"/> Wonderxam
+                        <div className="flex items-center gap-2 font-normal text-xl px-2 mb-2">
+                            <MatIcon name="school" className="text-purple-700"/>
+                            <span className="text-black">Wonderxam</span>
                         </div>
                         <button className="btn-primary" onClick={doExport} disabled={exporting}>
                             <MatIcon name="download"/> {exporting ? 'Exporting...' : 'Download PDF'}
