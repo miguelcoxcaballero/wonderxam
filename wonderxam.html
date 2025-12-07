@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Wonderxam</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inconsolata:wght@400;700&family=Inter:wght@400;600&family=Lato:wght@400;700&family=Lexend:wght@300;400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        :root {
+            --primary: #7c3aed; /* Purple */
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text: #1f1f1f;
+            --border: #e5e7eb;
+        }
+
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; height: 100vh; overflow: hidden;
+            user-select: none; 
+        }
+        
+        input, textarea {
+            user-select: text;
+        }
+
+        ::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+            background-color: transparent;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #dadce0;
+            border-radius: 8px;
+            border: 4px solid transparent;
+            background-clip: content-box;
+            transition: background-color 0.2s;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #bdc1c6;
+        }
+
+        input, textarea, button, select, .katex {
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+        }
+
+        .mat-icon { font-family: 'Material Symbols Rounded'; font-size: 24px; vertical-align: middle; user-select: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .app-shell { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
+        .main-area { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; background: var(--bg); }
+        .top-bar { height: 64px; display: flex; align-items: center; padding: 0 24px; background: var(--bg); border-bottom: 1px solid transparent; flex-shrink: 0; z-index: 300; position: relative; }
+        .top-bar::after { content: ''; position: absolute; left: 0; right: 14px; bottom: -24px; height: 24px; background: linear-gradient(to bottom, var(--bg), transparent); pointer-events: none; }
+        .doc-title { font-family: 'Google Sans', sans-serif; font-size: 20px; background: transparent; border: 1px solid transparent; padding: 6px 12px; border-radius: 8px; width: 100%; max-width: 400px; outline: none; transition: 0.2s; }
+        .doc-title:hover { background: #e9d5ff; }
+        .doc-title:focus { background: white; border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .viewport { flex: 1; overflow: auto; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px; }
+        .pages-scale-wrapper { display: flex; flex-direction: column; gap: 40px; transform-origin: top center; transition: transform 0.1s linear; }
+        .a4-page { width: 794px; height: 1123px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; box-sizing: border-box; }
+        
+        .grid-lines { 
+            position: absolute; inset: 0; pointer-events: none; z-index: 0; 
+            background-image: linear-gradient(to right, #f3e8ff 1px, transparent 1px), linear-gradient(to bottom, #f3e8ff 1px, transparent 1px);
+            border: 1px dashed #d8b4fe; 
+        }
+
+        /* Occupied/Ghost Styles */
+        .occupied-space {
+            position: absolute;
+            background-color: #e5e7eb; /* Gray */
+            opacity: 0.5;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .snap-ghost {
+            position: absolute;
+            background-color: rgba(139, 92, 246, 0.2); /* Purple tint */
+            border: 2px dashed var(--primary);
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 50; /* Above static blocks (10), below drag (1000) */
+            transition: all 0.1s;
+        }
+        .snap-ghost.invalid {
+            background-color: rgba(239, 68, 68, 0.4); 
+            border-color: #ef4444;
+        }
+
+        .sidebar { width: 320px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50; padding: 20px; gap: 16px; box-shadow: -2px 0 10px rgba(0,0,0,0.02); }
+        
+        .block-wrapper { position: absolute; background: white; border: 1px solid transparent; border-radius: 4px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s; z-index: 10; }
+        .block-wrapper:hover { background-color: #fafafa; border-color: #ddd; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .block-wrapper.dragging { transition: none !important; z-index: 1000 !important; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; border-color: var(--primary) !important; background: white; }
+        
+        /* Dragging/Resizing Invalid State */
+        .block-wrapper.invalid, .block-wrapper.dragging.invalid {
+            border-color: #ef4444 !important;
+            background-color: #fff1f2 !important;
+            box-shadow: 0 0 0 1px #ef4444, 0 10px 30px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .block-wrapper.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 8px 24px rgba(124, 58, 237, 0.15); z-index: 200; background: white; }
+        
+        /* Collision Highlight */
+        .block-wrapper.collision-highlight { 
+            background-color: #fee2e2 !important; 
+            border: 2px solid #fca5a5 !important; 
+            z-index: 200 !important; 
+        }
+
+        .drag-handle { position: absolute; left: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: grab; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
+        .block-wrapper:hover .drag-handle { opacity: 1; }
+        .block-wrapper.dragging .drag-handle { cursor: grabbing; }
+        .delete-btn { position: absolute; right: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
+        .delete-btn:hover { color: #d93025; background: #fce8e6; border-radius: 0 0 0 4px; }
+        .block-wrapper:hover .delete-btn { opacity: 1; }
+        .resize-handle { position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; cursor: nwse-resize; opacity: 0; z-index: 50; }
+        .resize-handle::after { content: ''; position: absolute; bottom: 3px; right: 3px; width: 6px; height: 6px; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary); }
+        .block-wrapper:hover .resize-handle { opacity: 1; }
+        .resize-handle-h { cursor: ew-resize; }
+        
+        .tool-btn { width: 100%; padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 12px; background: transparent; border: none; color: var(--text); font-family: 'Google Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; text-align: left; }
+        .tool-btn:hover { background: #f3f4f6; }
+        .tool-btn i { color: #5f6368; }
+        .btn-primary { width: 100%; padding: 12px; border-radius: 24px; background: var(--primary); color: white; border: none; font-family: 'Google Sans', sans-serif; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .btn-primary:disabled { opacity: 0.7; cursor: default; }
+        .fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
+        
+        @media (max-width: 1024px) {
+            .app-shell { flex-direction: column; }
+            .sidebar { display: none; }
+            .sidebar.open { display: flex; position: fixed; bottom: 90px; right: 24px; width: 300px; max-height: 60vh; overflow-y: auto; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.2); animation: slideUp 0.2s ease; }
+            .fab { display: flex; }
+            .top-bar { padding: 0 16px; }
+            .viewport { padding: 20px 10px; }
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .exporting .no-export { display: none !important; }
+        .export-only { display: none; }
+        .exporting .export-only { display: block; white-space: pre-wrap; }
+        .exporting .hide-on-export { display: none !important; }
+        .exporting .a4-page { margin: 0; box-shadow: none; border-radius: 0; }
+        .exporting .grid-lines { display: none; }
+        .exporting .occupied-space, .exporting .snap-ghost { display: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
+
+        const MatIcon = ({ name }) => <span className="mat-icon material-symbols-rounded">{name}</span>;
+
+        // --- CONFIG ---
+        const PX_PER_MM = 3.7795275591;
+        const A4_W = 794; 
+        const A4_H = 1123;
+        const CELL = 37.8; // ~1cm
+        const COLS = 18;
+        const ROWS = 27; // Rows PER PAGE
+        const MARGIN_X = (A4_W - (COLS * CELL)) / 2;
+        const MARGIN_Y = (A4_H - (ROWS * CELL)) / 2;
+
+        const FONTS = [
+            { name: 'Lexend (Dyslexic)', val: "'Lexend', sans-serif" },
+            { name: 'Roboto (Sans)', val: "'Roboto', sans-serif" },
+            { name: 'Arial', val: "Arial, sans-serif" },
+            { name: 'Calibri', val: "Calibri, sans-serif" },
+            { name: 'Times New Roman', val: "'Times New Roman', serif" },
+            { name: 'Open Sans', val: "'Open Sans', sans-serif" },
+            { name: 'Lato', val: "'Lato', sans-serif" },
+            { name: 'Montserrat', val: "'Montserrat', sans-serif" },
+            { name: 'Inter', val: "'Inter', sans-serif" },
+            { name: 'Lora (Serif)', val: "'Lora', serif" },
+            { name: 'Merriweather', val: "'Merriweather', serif" },
+            { name: 'Playfair Display', val: "'Playfair Display', serif" },
+            { name: 'Inconsolata (Mono)', val: "'Inconsolata', monospace" },
+            { name: 'Comic Neue (Dyslexic)', val: "'Comic Neue', cursive" },
+        ];
+        
+        const FONT_SIZES = [
+            { label: 'Small', val: 85 },
+            { label: 'Normal', val: 100 },
+            { label: 'Large', val: 125 }
+        ];
+
+        // --- COMPONENTS ---
+
+        const RichInput = ({ value, onChange, placeholder, minH="auto", image, onImg, contentRef }) => {
+            const f = useRef(null);
+            return (
+                <div className="w-full h-full flex flex-col group/input relative">
+                    <div className="flex-1 flex items-start gap-2 h-full">
+                        <textarea 
+                            ref={contentRef}
+                            className="w-full h-full bg-transparent outline-none resize-none hide-on-export overflow-hidden"
+                            placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}
+                            style={{minHeight: minH}}
+                        />
+                        <div className="export-only w-full whitespace-pre-wrap" style={{minHeight: minH}}>{value}</div>
+                        
+                        {onImg && (
+                            <div className="absolute right-0 top-0 opacity-0 group-hover/input:opacity-100 transition no-export z-10">
+                                <button onClick={()=>f.current.click()} className="p-1 bg-white rounded shadow hover:text-purple-600"><MatIcon name="image"/></button>
+                                <input type="file" ref={f} hidden accept="image/*" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>onImg(ev.target.result);r.readAsDataURL(e.target.files[0]);}}} />
+                            </div>
+                        )}
+                    </div>
+                    {image && (
+                        <div className="mt-1 relative inline-block">
+                            <img src={image} className="max-h-24 rounded border shadow-sm" />
+                            <button onClick={()=>onImg(null)} className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 no-export"><MatIcon name="close"/></button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const BlockContent = ({ b, update, fontSizeMultiplier, handleAutoResize, isResizing, setContentOverflow, maxAvailableH }) => {
+            const contentRef = useRef(null);
+            
+            useLayoutEffect(() => {
+                // If we are strictly resizing (drag.active), we check for overflow but DO NOT auto-resize
+                // We just report status
+                if (!contentRef.current || ['line', 'image', 'space'].includes(b.type)) return;
+                
+                const timer = setTimeout(() => {
+                    if (!contentRef.current) return;
+                    const scrollH = contentRef.current.scrollHeight;
+                    // Current height in pixels (if resizing, b.h is the ghost height)
+                    const currentHeightPx = b.h * CELL;
+                    
+                    // Check overflow
+                    // Tolerance of 4px
+                    const isOverflowing = scrollH > currentHeightPx + 4;
+                    
+                    if (setContentOverflow) {
+                        setContentOverflow(b.id, isOverflowing);
+                    }
+
+                    // Only auto-resize if NOT currently being dragged/resized by user
+                    // This prevents fighting
+                    if (!isResizing && isOverflowing) {
+                        const neededRows = Math.ceil((scrollH + 16) / CELL);
+                        handleAutoResize(b.id, neededRows);
+                    }
+                }, 50);
+                return () => clearTimeout(timer);
+            }, [b.data, fontSizeMultiplier, b.w, b.h, isResizing]); 
+
+            // Disable add option if:
+            // 1. We are already overflowing (invalid state)
+            // 2. OR Current height is equal to or greater than available space (can't grow)
+            const canAddOption = !isResizing && !(b.h >= maxAvailableH);
+
+            switch(b.type) {
+                case 'header': return (
+                    <div ref={contentRef} className="p-2 flex flex-col gap-4">
+                        <div className="flex gap-3">
+                            <div className="w-16 h-16 border border-dashed rounded flex items-center justify-center bg-gray-50 shrink-0 relative group">
+                                {b.data.logo ? <img src={b.data.logo} className="w-full h-full object-contain"/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>LOGO</span>}
+                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>update(b.id, {data:{...b.data, logo:ev.target.result}});r.readAsDataURL(e.target.files[0]);}}}/>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-1">
+                                <input className="font-bold bg-transparent outline-none w-full" style={{fontSize: '1.4em'}} placeholder="Institution" value={b.data.inst} onChange={e=>update(b.id, {data:{...b.data, inst:e.target.value}})}/>
+                                <input className="bg-transparent outline-none w-full" style={{fontSize: '1.1em'}} placeholder="Exam Name" value={b.data.title} onChange={e=>update(b.id, {data:{...b.data, title:e.target.value}})}/>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 border-t pt-2" style={{fontSize: '0.75em'}}>
+                            {['Name','Date','Class','Score'].map(l=><div key={l} className="flex gap-1"><span className="font-bold">{l}:</span><div className="flex-1 border-b border-dashed border-gray-400"></div></div>)}
+                        </div>
+                    </div>
+                );
+                case 'text': return <div className="p-2 h-full"><RichInput contentRef={contentRef} value={b.data.text} onChange={v=>update(b.id,{data:{...b.data, text:v}})} placeholder="Instructions..." /></div>;
+                case 'line': return <div className="w-full h-full flex items-center justify-center px-2"><div className="w-full border-b border-black"></div></div>;
+                case 'image': return (
+                    <div className="w-full h-full bg-gray-50 flex items-center justify-center relative group">
+                        {b.data.src ? <img src={b.data.src} className="w-full h-full object-contain"/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>Upload Image</span>}
+                        {!b.data.src && <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>update(b.id,{data:{...b.data,src:ev.target.result}});r.readAsDataURL(e.target.files[0]);}}} />}
+                    </div>
+                );
+                case 'mcq': return (
+                    <div ref={contentRef} className="p-2 h-full flex flex-col">
+                        <div className="flex gap-2 mb-1">
+                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Question"/></div>
+                        </div>
+                        <div className="pl-8 flex-1 flex flex-col gap-1">
+                            {b.data.opts.map((o,i)=>(
+                                <div key={i} className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full border border-gray-400"></div>
+                                    <span className="font-bold" style={{fontSize: '0.8em'}}>{String.fromCharCode(65+i)}.</span>
+                                    <input className="flex-1 bg-transparent border-b border-transparent focus:border-purple-300 outline-none" value={o} onChange={e=>{const n=[...b.data.opts];n[i]=e.target.value;update(b.id,{data:{...b.data,opts:n}})}} />
+                                </div>
+                            ))}
+                            <button 
+                                className={`text-left no-export transition-colors ${canAddOption ? 'text-purple-600 hover:text-purple-800' : 'text-gray-400 cursor-not-allowed'}`}
+                                style={{fontSize: '0.8em'}} 
+                                onClick={()=>{
+                                    if(canAddOption) {
+                                        const n=[...b.data.opts,''];
+                                        update(b.id,{data:{...b.data,opts:n}})
+                                    }
+                                }}
+                                title={!canAddOption ? "Not enough space to add option" : "Add Option"}
+                            >+ Option</button>
+                        </div>
+                    </div>
+                );
+                case 'short': return (
+                    <div ref={contentRef} className="p-2 h-full flex flex-col">
+                        <div className="flex gap-2 mb-1">
+                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Question"/></div>
+                        </div>
+                        <div className="pl-8 mt-auto space-y-3">
+                            {Array(3).fill(0).map((_,i)=><div key={i} className="border-b border-gray-300 w-full h-px"></div>)}
+                        </div>
+                    </div>
+                );
+                case 'tf': return (
+                    <div ref={contentRef} className="p-2 h-full flex flex-col">
+                        <div className="flex gap-2 mb-1">
+                            <input className="w-6 font-bold bg-transparent outline-none text-right" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Statement"/></div>
+                        </div>
+                        <div className="pl-8 mt-2 font-mono" style={{fontSize: '0.8em'}}>[ ] True &nbsp;&nbsp; [ ] False</div>
+                    </div>
+                );
+            }
+        };
+
+        /* --- MAIN APP --- */
+        function App() {
+            const [blocks, setBlocks] = useState([]);
+            const [docStyle, setDocStyle] = useState({ font: FONTS[0].val, size: 100 });
+            const [zoom, setZoom] = useState(1);
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [exporting, setExporting] = useState(false);
+            const [title, setTitle] = useState("Untitled Exam");
+            const [overflowMap, setOverflowMap] = useState({}); // Track overflow state of blocks
+
+            const containerRef = useRef(null);
+            
+            // Enhanced Drag State
+            const [drag, setDrag] = useState({ 
+                active: false, 
+                id: null, 
+                mode: null, 
+                startX: 0, 
+                startY: 0, 
+                origX: 0, 
+                origY: 0, 
+                origW: 0, 
+                origH: 0,
+                // Ghost Resize/Move values (Visual only)
+                resizeW: 0,
+                resizeH: 0,
+                snapX: 0,
+                snapY: 0,
+                
+                deltaX: 0, 
+                deltaY: 0,
+                
+                isValid: true,
+                collidingIds: [] 
+            });
+
+            // Auto Zoom on Mount
+            useLayoutEffect(() => {
+                const fit = () => {
+                    if(!containerRef.current) return;
+                    const w = containerRef.current.clientWidth;
+                    if(w < 850) setZoom((w - 40) / A4_W);
+                    else setZoom(1);
+                };
+                window.addEventListener('resize', fit);
+                fit();
+                return () => window.removeEventListener('resize', fit);
+            }, []);
+
+            // Determine Pages
+            const totalPages = useMemo(() => {
+                let maxY = 0;
+                blocks.forEach(b => { if(b.y + b.h > maxY) maxY = b.y + b.h; });
+                return Math.max(1, Math.ceil(maxY / ROWS));
+            }, [blocks]);
+
+            const getPage = (y) => Math.floor(y / ROWS);
+
+            const handleContentOverflow = useCallback((id, isOverflowing) => {
+                setOverflowMap(prev => {
+                    if (prev[id] === isOverflowing) return prev;
+                    return { ...prev, [id]: isOverflowing };
+                });
+            }, []);
+
+            // Calculate Max Height for Auto-Expansion (Used by BlockContent)
+            const getMaxHeight = (b) => {
+                const p = Math.floor(b.y / ROWS);
+                const pageEnd = (p + 1) * ROWS;
+                let limit = pageEnd - b.y; // Max height to page bottom
+
+                for (let other of blocks) {
+                    if (other.id === b.id) continue;
+                    // Check horizontal overlap
+                    if (!(b.x + b.w <= other.x || b.x >= other.x + other.w)) {
+                        // Check if other is below
+                        if (other.y >= b.y + b.h) { 
+                            const dist = other.y - b.y;
+                            if (dist < limit) limit = dist;
+                        }
+                        // If they overlap already, limit is effectively 0 or negative relative to b.h
+                        // which means we definitely can't grow
+                    }
+                }
+                return Math.max(b.h, limit); // At least current height
+            };
+
+            // Add Block
+            const add = (type) => {
+                setSidebarOpen(false);
+                let w=4, h=2, data={};
+                const qNum = blocks.filter(b=>['mcq','short','tf'].includes(b.type)).length + 1;
+
+                if(type==='header'){w=18;h=5; data={inst:'', title:'', logo:null};}
+                else if(type==='text'){w=18;h=2; data={text:''};}
+                else if(type==='line'){w=18;h=1; data={};}
+                else if(type==='image'){w=6;h=6; data={src:null};}
+                else if(type==='mcq'){w=18;h=3; data={num:qNum+'.', q:'', opts:['','']};}
+                else if(type==='short'){w=18;h=3; data={num:qNum+'.', q:''};}
+                else if(type==='tf'){w=18;h=2; data={num:qNum+'.', q:''};}
+
+                let y = 0;
+                let found = false;
+                while(!found && y < ROWS*10) {
+                    if (getPage(y) !== getPage(y + h - 1)) {
+                        y = (getPage(y) + 1) * ROWS;
+                        continue;
+                    }
+                    for(let x=0; x<=COLS-w; x++) {
+                        let hit = false;
+                        for(let b of blocks) {
+                            if(x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) { hit = true; break; }
+                        }
+                        if(!hit) {
+                            setBlocks([...blocks, { id:Date.now(), type, x, y, w, h, data }]);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) y++;
+                }
+            };
+
+            const updateBlock = (id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b));
+            const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id!==id));
+
+            const handleAutoResize = (id, newH) => {
+                const clampedH = Math.min(newH, ROWS);
+                setBlocks(prev => {
+                    const idx = prev.findIndex(b => b.id === id);
+                    if(idx === -1) return prev;
+                    
+                    const b = prev[idx];
+                    if(b.h === clampedH) return prev;
+
+                    // Calculate proposed block
+                    const block = {...b, h: clampedH}; 
+                    
+                    const currentRow = block.y;
+                    const pageIndex = Math.floor(currentRow / ROWS);
+                    const pageStart = pageIndex * ROWS;
+                    const pageEnd = (pageIndex + 1) * ROWS;
+                    
+                    if (currentRow + clampedH > pageEnd) {
+                        if (currentRow !== pageStart) {
+                             block.y = (pageIndex + 1) * ROWS;
+                        }
+                    }
+
+                    // COLLISION CHECK
+                    let collision = false;
+                    for(let other of prev) {
+                        if(other.id === id) continue;
+                        const isOver = !(
+                            block.x + block.w <= other.x || 
+                            block.x >= other.x + other.w || 
+                            block.y + block.h <= other.y || 
+                            block.y >= other.y + other.h
+                        );
+                        if(isOver) { collision = true; break; }
+                    }
+
+                    if(collision) return prev; // Deny resize
+
+                    const newBlocks = [...prev];
+                    newBlocks[idx] = block;
+                    return newBlocks;
+                });
+            };
+
+            const startDrag = (e, id, mode) => {
+                e.preventDefault(); 
+                if(e.type==='touchstart') return;
+                const b = blocks.find(x=>x.id===id);
+                setDrag({ 
+                    active: true, 
+                    id, 
+                    mode, 
+                    startX: e.clientX, 
+                    startY: e.clientY, 
+                    origX: b.x, 
+                    origY: b.y, 
+                    origW: b.w, 
+                    origH: b.h,
+                    
+                    // Init Ghost Props
+                    resizeW: b.w,
+                    resizeH: b.h,
+                    snapX: b.x,
+                    snapY: b.y,
+
+                    deltaX: 0, 
+                    deltaY: 0,
+                    isValid: true,
+                    collidingIds: []
+                });
+            };
+
+            useEffect(() => {
+                const move = (e) => {
+                    if(!drag.active) return;
+                    e.preventDefault();
+                    
+                    const dX = e.clientX - drag.startX;
+                    const dY = e.clientY - drag.startY;
+                    const gridDx = Math.round(dX / (CELL * zoom));
+                    const gridDy = Math.round(dY / (CELL * zoom));
+
+                    let valid = true;
+                    const collisions = [];
+                    // Exclude self from collision check
+                    const otherBlocks = blocks.filter(b => b.id !== drag.id);
+
+                    if(drag.mode === 'move') {
+                        // Calculate Snap Targets
+                        let nx = Math.max(0, Math.min(COLS - drag.origW, drag.origX + gridDx));
+                        let ny = Math.max(0, drag.origY + gridDy); 
+                        
+                        // Page Snap
+                        const startPage = Math.floor(ny / ROWS);
+                        const endPage = Math.floor((ny + drag.origH - 1) / ROWS);
+                        if(startPage !== endPage) {
+                            const nextPageStart = endPage * ROWS;
+                            const prevPageEnd = nextPageStart - drag.origH;
+                            if(Math.abs(ny - nextPageStart) < Math.abs(ny - prevPageEnd)) ny = nextPageStart;
+                            else ny = prevPageEnd;
+                        }
+
+                        // Check Validity (Collision)
+                        for(let ob of otherBlocks) {
+                            const isOver = !(
+                                nx + drag.origW <= ob.x || 
+                                nx >= ob.x + ob.w || 
+                                ny + drag.origH <= ob.y || 
+                                ny >= ob.y + ob.h
+                            );
+                            if(isOver) { 
+                                valid = false; 
+                                collisions.push(ob.id);
+                            }
+                        }
+
+                        // Update drag state WITHOUT changing blocks
+                        setDrag(prev => ({
+                            ...prev, 
+                            deltaX: dX, 
+                            deltaY: dY,
+                            snapX: nx,
+                            snapY: ny,
+                            isValid: valid,
+                            collidingIds: collisions
+                        }));
+
+                    } else {
+                        // RESIZE GHOST LOGIC
+                        let nw = Math.max(1, Math.min(COLS - drag.origX, drag.origW + gridDx));
+                        let nh = Math.max(1, drag.origH + gridDy);
+                        const b = blocks.find(x => x.id === drag.id);
+                        if(b.type === 'line') nh = 1;
+
+                        const p = Math.floor(drag.origY / ROWS);
+                        const maxH = ((p+1)*ROWS) - drag.origY;
+                        nh = Math.min(nh, maxH, ROWS);
+
+                        // Check Collision for Resize
+                        for(let ob of otherBlocks) {
+                            const isOver = !(
+                                drag.origX + nw <= ob.x || 
+                                drag.origX >= ob.x + ob.w || 
+                                drag.origY + nh <= ob.y || 
+                                drag.origY >= ob.y + ob.h
+                            );
+                            if(isOver) { 
+                                valid = false; 
+                                collisions.push(ob.id);
+                            }
+                        }
+
+                        setDrag(prev => ({
+                            ...prev,
+                            resizeW: nw,
+                            resizeH: nh,
+                            isValid: valid,
+                            collidingIds: collisions
+                        }));
+                    }
+                };
+                
+                const up = () => {
+                    if(drag.active) {
+                        // Only commit if Valid
+                        // AND we also check for text overflow state via map if we are resizing
+                        // Actually, if text overflow happens, we don't commit? 
+                        // Or we rely on auto-snap back? 
+                        // The prompt asked "dont let me do so". 
+                        // If we don't commit, it snaps back. Perfect.
+                        
+                        // Check explicit collision validity
+                        if(drag.isValid) {
+                            if (drag.mode === 'move') {
+                                updateBlock(drag.id, {x: drag.snapX, y: drag.snapY});
+                            } else {
+                                // For resize, check if content overflows in the new size
+                                // We check the map
+                                const isOverflowing = overflowMap[drag.id];
+                                if (!isOverflowing) {
+                                    updateBlock(drag.id, {w: drag.resizeW, h: drag.resizeH});
+                                }
+                                // If overflowing, we do nothing -> Reverts to original size
+                            }
+                        }
+                    }
+                    setDrag(prev => ({...prev, active:false, collidingIds: []}));
+                };
+
+                if(drag.active) {
+                    window.addEventListener('mousemove', move);
+                    window.addEventListener('mouseup', up);
+                }
+                return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
+            }, [drag, blocks, zoom, overflowMap]);
+
+            // Export
+            const doExport = async () => {
+                setExporting(true);
+                setSidebarOpen(false);
+                const oldZoom = zoom;
+                setZoom(1);
+                await new Promise(r => setTimeout(r, 500)); 
+
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const pages = document.querySelectorAll('.a4-page');
+                
+                for(let i=0; i<pages.length; i++) {
+                    const cvs = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor:'#fff' });
+                    if(i>0) pdf.addPage();
+                    pdf.addImage(cvs.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
+                }
+                pdf.save(title + '.pdf');
+                setZoom(oldZoom);
+                setExporting(false);
+            };
+
+            return (
+                <div className={`app-shell ${exporting?'exporting':''}`}>
+                    <div className="main-area">
+                        <div className="top-bar">
+                            <input className="doc-title" value={title} onChange={e=>setTitle(e.target.value)} />
+                        </div>
+                        
+                        <div className="viewport" ref={containerRef}>
+                            <div className="pages-scale-wrapper" style={{ transform: `scale(${zoom})`, fontFamily: docStyle.font, fontSize: (16 * (docStyle.size / 100)) + 'px' }}>
+                                {Array.from({length: totalPages}).map((_, i) => (
+                                    <div key={i} className="a4-page" style={{padding: `${MARGIN_Y}px ${MARGIN_X}px`}}>
+                                        <div className="relative w-full h-full">
+                                            <div className="grid-lines" style={{backgroundSize: `${CELL}px ${CELL}px`}}></div>
+                                            
+                                            {/* RENDER OCCUPIED GHOSTS (Gray) */}
+                                            {blocks.filter(b => {
+                                                const start = b.y; const end = b.y + b.h;
+                                                const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
+                                                return start < pageEnd && end > pageStart && b.id !== drag.id;
+                                            }).map(b => (
+                                                <div key={'occ-'+b.id} className="occupied-space" style={{
+                                                    left: b.x*CELL, top: (b.y - i*ROWS)*CELL,
+                                                    width: b.w*CELL, height: b.h*CELL
+                                                }}/>
+                                            ))}
+
+                                            {/* RENDER ACTIVE SNAP GHOST (Purple/Red) */}
+                                            {drag.active && drag.mode === 'move' && (() => {
+                                                const start = drag.snapY; const end = drag.snapY + drag.origH;
+                                                const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
+                                                if(start < pageEnd && end > pageStart) {
+                                                    return (
+                                                        <div className={`snap-ghost ${!drag.isValid ? 'invalid' : ''}`} style={{
+                                                            left: drag.snapX*CELL, top: (drag.snapY - i*ROWS)*CELL,
+                                                            width: drag.origW*CELL, height: drag.origH*CELL
+                                                        }}/>
+                                                    );
+                                                }
+                                            })()}
+
+                                            {/* RENDER BLOCKS */}
+                                            {blocks.filter(b => {
+                                                const start = b.y;
+                                                const end = b.y + b.h;
+                                                const pageStart = i * ROWS;
+                                                const pageEnd = (i + 1) * ROWS;
+                                                return start < pageEnd && end > pageStart;
+                                            }).map(b => {
+                                                const isActive = drag.active && drag.id === b.id;
+                                                const isColliding = drag.active && drag.collidingIds.includes(b.id);
+                                                const isOverflow = overflowMap[b.id] && isActive;
+                                                const isInvalid = isActive && (!drag.isValid || isOverflow);
+
+                                                // Determine Block Props for Ghosting
+                                                // If dragging (move), visual pos handled by override. W/H is static.
+                                                // If resizing, visual W/H is from drag state. Pos is static.
+                                                
+                                                let displayX = b.x;
+                                                let displayY = b.y;
+                                                let displayW = b.w;
+                                                let displayH = b.h;
+                                                let styleOverride = {};
+
+                                                if (isActive) {
+                                                    if (drag.mode === 'move') {
+                                                        const startPixelY = (drag.origY - (i * ROWS)) * CELL; 
+                                                        const startPixelX = drag.origX * CELL;
+                                                        
+                                                        styleOverride = {
+                                                            left: startPixelX,
+                                                            top: startPixelY,
+                                                            transform: `translate(${drag.deltaX / zoom}px, ${drag.deltaY / zoom}px) scale(1.05)`,
+                                                            zIndex: 999,
+                                                            transition: 'none',
+                                                            opacity: 0.9 // Slight transparency to see ghost
+                                                        };
+                                                    } else if (drag.mode === 'resize') {
+                                                        // Ghost Resize Dimensions
+                                                        displayW = drag.resizeW;
+                                                        displayH = drag.resizeH;
+                                                        // No transform needed for resize, just update W/H
+                                                        styleOverride = {
+                                                            zIndex: 999,
+                                                            transition: 'none'
+                                                        }
+                                                    }
+                                                }
+
+                                                // Pass the *Ghost* dimensions to content so it can check overflow on the *proposed* size
+                                                // NOTE: displayW/H are in grid units.
+                                                const contentBlockProps = isActive && drag.mode === 'resize' 
+                                                    ? { ...b, w: drag.resizeW, h: drag.resizeH } 
+                                                    : b;
+
+                                                // Calculate max height for Add Option Button logic
+                                                const maxAvailableH = getMaxHeight(b);
+
+                                                return (
+                                                    <div 
+                                                        key={b.id} 
+                                                        className={`block-wrapper ${isActive ? 'dragging' : ''} ${isInvalid ? 'invalid' : ''} ${isColliding ? 'collision-highlight' : ''} ${drag.active && !isActive && !isColliding ? 'scale-[0.98] opacity-90' : ''}`}
+                                                        style={{
+                                                            left: displayX * CELL,
+                                                            top: (displayY - i*ROWS) * CELL,
+                                                            width: displayW * CELL,
+                                                            height: displayH * CELL,
+                                                            ...styleOverride 
+                                                        }}
+                                                    >
+                                                        <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
+                                                        <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
+                                                        
+                                                        <BlockContent 
+                                                            b={contentBlockProps} // Pass ghost props if resizing
+                                                            update={updateBlock} 
+                                                            fontSizeMultiplier={docStyle.size}
+                                                            handleAutoResize={handleAutoResize}
+                                                            isResizing={isActive && drag.mode === 'resize'}
+                                                            setContentOverflow={handleContentOverflow}
+                                                            maxAvailableH={maxAvailableH}
+                                                        />
+                                                        
+                                                        <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'resize')}}></div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="absolute bottom-8 w-full left-0 text-center text-base font-medium text-black">{i+1} / {totalPages}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button className="fab" onClick={()=>setSidebarOpen(!sidebarOpen)}>
+                        <MatIcon name={sidebarOpen ? "close" : "add"} />
+                    </button>
+
+                    <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+                        <div className="flex items-center gap-2 text-purple-700 font-bold text-xl px-2">
+                            <MatIcon name="school"/> Wonderxam
+                        </div>
+                        <button className="btn-primary" onClick={doExport} disabled={exporting}>
+                            <MatIcon name="download"/> {exporting ? 'Exporting...' : 'Download PDF'}
+                        </button>
+
+                        <div className="overflow-y-auto flex-1 flex flex-col gap-4 pr-1">
+                            {/* STYLE CONTROLS */}
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                <div className="text-xs font-bold text-gray-500 uppercase mb-2">Document Style</div>
+                                <select className="w-full p-2 rounded border border-gray-300 bg-white mb-3 text-sm" 
+                                    value={docStyle.font} onChange={e=>setDocStyle({...docStyle, font:e.target.value})}>
+                                    {FONTS.map(f => <option key={f.name} value={f.val}>{f.name}</option>)}
+                                </select>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Font Size:</span>
+                                    <select 
+                                        className="p-1 rounded border border-gray-300 bg-white text-sm"
+                                        value={docStyle.size} 
+                                        onChange={e=>setDocStyle({...docStyle, size:Number(e.target.value)})}
+                                    >
+                                        {FONT_SIZES.map(s => (
+                                            <option key={s.label} value={s.val}>{s.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* WIDGETS */}
+                            <div>
+                                <div className="text-xs font-bold text-gray-500 uppercase mb-2">Structure</div>
+                                <button className="tool-btn" onClick={()=>add('header')}><MatIcon name="title"/> Header</button>
+                                <button className="tool-btn" onClick={()=>add('text')}><MatIcon name="notes"/> Text Block</button>
+                                <button className="tool-btn" onClick={()=>add('line')}><MatIcon name="remove"/> Divider Line</button>
+                                <button className="tool-btn" onClick={()=>add('image')}><MatIcon name="image"/> Image</button>
+                            </div>
+
+                            <div>
+                                <div className="text-xs font-bold text-gray-500 uppercase mb-2">Questions</div>
+                                <button className="tool-btn" onClick={()=>add('mcq')}><MatIcon name="list"/> Multiple Choice</button>
+                                <button className="tool-btn" onClick={()=>add('short')}><MatIcon name="short_text"/> Short Answer</button>
+                                <button className="tool-btn" onClick={()=>add('tf')}><MatIcon name="check_circle"/> True / False</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
