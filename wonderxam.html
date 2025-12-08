@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=5.0">
     <title>Wonderxam</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,12 +48,11 @@
         }
 
         /* Prevent scrolling on the document root */
-        /* FIX: Ensure #root also takes full height so flex children work */
         html, body, #root {
             margin: 0; 
             height: 100%; 
             width: 100%;
-            overflow: hidden; /* Stop body scroll, let viewport handle it */
+            overflow: hidden; 
             font-family: 'Roboto', sans-serif; 
             background-color: var(--bg);
             color: var(--text);
@@ -64,7 +63,7 @@
             user-select: text;
         }
 
-        /* SCROLLBAR STYLING – MATCH OLD LOOK */
+        /* --- SCROLLBAR RESTORED TO ORIGINAL STYLE --- */
         ::-webkit-scrollbar {
             width: 14px;
             height: 14px;
@@ -123,19 +122,18 @@
         .doc-title:hover { background: #e9d5ff; }
         .doc-title:focus { background: white; border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* Viewport - SCROLL FIX */
+        /* Viewport */
         .viewport { 
             flex: 1;
-            height: 100%; /* Ensure it fills the vertical space */
-            overflow-y: auto;   /* Force vertical scroll */
-            overflow-x: hidden; /* Force hide horizontal scroll */
+            height: 100%; 
+            overflow-y: auto;   /* vertical scrolling */
+            overflow-x: hidden; /* hide horizontal */
             padding: 40px 0;    
-            display: block; /* Standard block layout helps scrolling behavior */
+            display: block; 
             width: 100%; 
             position: relative;
         }
         
-        /* Inner container handles centering and sizing */
         .zoom-outer-container {
             width: 100%;
             min-height: 100%;
@@ -168,7 +166,7 @@
             position: absolute;
             background-color: #e5e7eb; /* Gray */
             opacity: 0.5;
-            border-radius: 6px;
+            border-radius: 12px;
             pointer-events: none;
             z-index: 1;
         }
@@ -177,7 +175,7 @@
             position: absolute;
             background-color: rgba(139, 92, 246, 0.2); /* Purple tint */
             border: 2px dashed var(--primary);
-            border-radius: 6px;
+            border-radius: 12px;
             pointer-events: none;
             z-index: 50; 
             transition: all 0.1s;
@@ -204,7 +202,23 @@
             flex-shrink: 0;
         }
         
-        .block-wrapper { position: absolute; background: white; border: 1px solid transparent; border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s; z-index: 10; }
+        .block-wrapper { 
+            position: absolute; 
+            background: white; 
+            border: 1px solid transparent; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column; 
+            transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        box-shadow 0.2s, 
+                        opacity 0.2s; 
+            z-index: 10; 
+        }
         .block-wrapper:hover { background-color: #fafafa; border-color: #ddd; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .block-wrapper.dragging { transition: none !important; z-index: 1000 !important; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; border-color: var(--primary) !important; background: white; }
         
@@ -224,9 +238,28 @@
             z-index: 200 !important; 
         }
 
-        .drag-handle { position: absolute; left: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: grab; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
+        /* Updated Drag Handle: Outside Left & Larger */
+        .drag-handle { 
+            position: absolute; 
+            left: -42px; 
+            top: 0; 
+            width: 36px; 
+            height: 36px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: grab; 
+            color: #9ca3af; 
+            opacity: 0; 
+            transition: 0.2s; 
+            z-index: 50; 
+            background: white; 
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
         .block-wrapper:hover .drag-handle { opacity: 1; }
         .block-wrapper.dragging .drag-handle { cursor: grabbing; }
+
         .delete-btn { position: absolute; right: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
         .delete-btn:hover { color: #d93025; background: #fce8e6; border-radius: 0 0 0 4px; }
         .block-wrapper:hover .delete-btn { opacity: 1; }
@@ -370,7 +403,19 @@
                 margin: 0;
                 height: auto;
             }
-            .sidebar.open { display: flex; position: fixed; bottom: 90px; right: 24px; width: 300px; max-height: 60vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.2); animation: slideUp 0.2s ease; border: 1px solid var(--border); }
+            .sidebar.open { 
+                display: flex; 
+                position: fixed; 
+                bottom: 90px; 
+                right: 24px; 
+                width: 300px; 
+                max-height: 60vh; 
+                overflow-y: auto; 
+                box-shadow: 0 8px 30px rgba(0,0,0,0.2); 
+                animation: slideUp 0.2s ease; 
+                border: 1px solid var(--border); 
+                border-radius: 24px;
+            }
             .fab { display: flex; }
             .top-bar { padding: 0 16px; }
             .viewport { padding: 20px 10px; }
@@ -421,12 +466,9 @@
 
         // --- NEW GRID COMPONENT FOR ANIMATED DOTS ---
         const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
-            // Generate all potential grid points (vertices) for this page
             const points = useMemo(() => {
                 const pts = [];
-                // Rows: 0 to ROWS (inclusive to cover bottom edge)
                 for (let r = 0; r <= ROWS; r++) {
-                    // Cols: 0 to COLS (inclusive)
                     for (let c = 0; c <= COLS; c++) {
                         pts.push({ c, r });
                     }
@@ -437,16 +479,12 @@
             return (
                 <div className="grid-layer absolute inset-0 pointer-events-none z-0">
                     {points.map((pt, i) => {
-                        // Check coverage dynamically in map to allow animation of state change
                         const globalRow = pageIndex * ROWS + pt.r;
                         const col = pt.c;
                         
                         let isCovered = false;
                         for (let b of blocks) {
-                            // SKIP COVERAGE CHECK FOR DRAGGING BLOCK - Show grid under it!
                             if (draggingBlockId && b.id === draggingBlockId) continue;
-
-                            // Check if point is within the block's vertex bounds (inclusive)
                             if (
                                 col >= b.x && col <= b.x + b.w &&
                                 globalRow >= b.y && globalRow <= b.y + b.h
@@ -461,15 +499,15 @@
                                 key={i}
                                 style={{
                                     position: 'absolute',
-                                    left: pt.c * CELL - 2, // Center the 4px dot (-2)
+                                    left: pt.c * CELL - 2,
                                     top: pt.r * CELL - 2,
                                     width: 4, 
                                     height: 4, 
                                     borderRadius: '50%', 
-                                    backgroundColor: '#cbd5e1', // slate-300
-                                    opacity: isCovered ? 0 : 1, // Fade logic
-                                    transition: 'opacity 0.4s ease', // Gentle fade animation
-                                    willChange: 'opacity' // Performance hint
+                                    backgroundColor: '#cbd5e1',
+                                    opacity: isCovered ? 0 : 1,
+                                    transition: 'opacity 0.4s ease',
+                                    willChange: 'opacity'
                                 }}
                             />
                         );
@@ -484,10 +522,9 @@
             const innerRef = useRef(null);
             const ref = contentRef || innerRef; 
 
-            // Auto-resize logic internal to RichInput
             useLayoutEffect(() => {
                 if(ref.current) {
-                    ref.current.style.height = 'auto'; // Reset to shrink if needed
+                    ref.current.style.height = 'auto';
                     ref.current.style.height = ref.current.scrollHeight + 'px';
                 }
             }, [value]);
@@ -497,7 +534,7 @@
                     <div className="flex-1 flex items-start gap-2">
                         <textarea 
                             ref={ref}
-                            rows={1} // FORCE 1 ROW DEFAULT
+                            rows={1}
                             className={`w-full bg-transparent outline-none resize-none hide-on-export overflow-hidden p-0 leading-normal ${className}`}
                             placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}
                             style={{minHeight: minH, lineHeight: '1.5em'}}
@@ -530,10 +567,7 @@
                 const timer = setTimeout(() => {
                     if (!contentRef.current) return;
                     const scrollH = contentRef.current.scrollHeight;
-                    // Current height in pixels (if resizing, b.h is the ghost height)
                     const currentHeightPx = b.h * CELL;
-                    
-                    // Check overflow tolerance of 4px
                     const isOverflowing = scrollH > currentHeightPx + 4;
                     
                     if (setContentOverflow) {
@@ -541,8 +575,7 @@
                     }
 
                     if (!isResizing && isOverflowing) {
-                        const neededRows = Math.ceil((scrollH + 8) / CELL); // Adjusted padding buffer
-                        // Prevent needless updates if calculated rows are same
+                        const neededRows = Math.ceil((scrollH + 8) / CELL);
                         if (neededRows > b.h) {
                             handleAutoResize(b.id, neededRows);
                         }
@@ -551,8 +584,6 @@
                 return () => clearTimeout(timer);
             }, [b.data, fontSizeMultiplier, b.w, b.h, isResizing]); 
 
-            // Disable add option if resizing or if strictly constrained manually 
-            // But we allow auto-grow now, so we mostly check if it would exceed page
             const canAddOption = !isResizing && !(b.h >= ROWS);
 
             switch(b.type) {
@@ -584,7 +615,6 @@
                 case 'mcq': return (
                     <div ref={contentRef} className="p-1 flex flex-col">
                         <div className="flex gap-2 mb-1 items-baseline">
-                             {/* items-baseline is KEY for aligning text with number */}
                             <input className="w-6 font-bold bg-transparent outline-none text-right pt-1.5" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
                             <div className="flex-1">
                                 <RichInput 
@@ -633,7 +663,7 @@
                 case 'short': return (
                     <div ref={contentRef} className="p-1 flex flex-col">
                         <div className="flex gap-2 mb-1 items-baseline">
-                             <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
                             <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Question"/></div>
                         </div>
                     </div>
@@ -641,7 +671,7 @@
                 case 'tf': return (
                     <div ref={contentRef} className="p-1 flex flex-col">
                         <div className="flex gap-2 mb-1 items-baseline">
-                             <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
+                            <input className="w-6 font-bold bg-transparent outline-none text-right p-0 m-0 leading-[1.5em]" value={b.data.num} onChange={e=>update(b.id,{data:{...b.data,num:e.target.value}})}/>
                             <div className="flex-1"><RichInput value={b.data.q} onChange={v=>update(b.id,{data:{...b.data,q:v}})} placeholder="Statement"/></div>
                         </div>
                         <div className="pl-8 mt-2 flex gap-6" style={{fontSize: '0.8em'}}>
@@ -669,7 +699,6 @@
 
             const containerRef = useRef(null);
             
-            // Enhanced Drag State
             const [drag, setDrag] = useState({ 
                 active: false, 
                 id: null, 
@@ -690,7 +719,6 @@
                 collidingIds: [] 
             });
 
-            // Calculate Max Height for Auto-Expansion
             const getMaxHeight = useCallback((b) => {
                 const p = Math.floor(b.y / ROWS);
                 const pageEnd = (p + 1) * ROWS;
@@ -698,7 +726,6 @@
                 return 1000; 
             }, [blocks]);
 
-            // Auto Zoom on Mount
             useLayoutEffect(() => {
                 const fit = () => {
                     if(!containerRef.current) return;
@@ -734,7 +761,6 @@
                 });
             }, []);
 
-            // Auto-Resize Logic with PUSH
             const handleAutoResize = (id, newH) => {
                 const clampedH = Math.min(newH, ROWS);
                 
@@ -745,7 +771,6 @@
                     const b = prev[idx];
                     if(b.h === clampedH) return prev;
 
-                    // Deep copy
                     const newBlocks = JSON.parse(JSON.stringify(prev));
                     const block = newBlocks[idx];
                     block.h = clampedH;
@@ -793,7 +818,6 @@
                 });
             };
 
-            // Add Block
             const add = (type) => {
                 setSidebarOpen(false);
                 let w=4, h=2, data={};
@@ -908,7 +932,6 @@
                         }));
 
                     } else {
-                        // RESIZE GHOST LOGIC
                         let nw = Math.max(1, Math.min(COLS - drag.origX, drag.origW + gridDx));
                         let nh = Math.max(1, drag.origH + gridDy);
                         const b = blocks.find(x => x.id === drag.id);
@@ -918,7 +941,6 @@
                         const maxH = ((p+1)*ROWS) - drag.origY;
                         nh = Math.min(nh, maxH, ROWS);
 
-                        // Check Collision for Resize
                         for(let ob of otherBlocks) {
                             const isOver = !(
                                 drag.origX + nw <= ob.x || 
@@ -952,7 +974,6 @@
                                 if (!isOverflowing) {
                                     updateBlock(drag.id, {w: drag.resizeW, h: drag.resizeH});
                                 }
-                                // If overflowing, we do nothing -> Reverts to original size
                             }
                         }
                     }
@@ -1001,7 +1022,6 @@
                                             <div className="relative w-full h-full">
                                                 <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
                                                 
-                                                {/* Render Occupied Ghosts */}
                                                 {blocks.filter(b => {
                                                     const start = b.y; const end = b.y + b.h;
                                                     const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
@@ -1013,7 +1033,6 @@
                                                     }}/>
                                                 ))}
 
-                                                {/* Render Snap Ghost */}
                                                 {drag.active && drag.mode === 'move' && (() => {
                                                     const start = drag.snapY; const end = drag.snapY + drag.origH;
                                                     const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
@@ -1027,7 +1046,6 @@
                                                     }
                                                 })()}
 
-                                                {/* Render Blocks */}
                                                 {blocks.filter(b => {
                                                     const start = b.y; const end = b.y + b.h;
                                                     const pageStart = i * ROWS; const pageEnd = (i + 1) * ROWS;
@@ -1070,7 +1088,15 @@
                                                                 ...styleOverride 
                                                             }}
                                                         >
-                                                            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'white', zIndex: -1, borderRadius: '0px' }} />
+                                                            {/* mask to hide dots, with the SAME rounding as the block & ghost */}
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                inset: 0,
+                                                                backgroundColor: 'white',
+                                                                zIndex: -1,
+                                                                borderRadius: '12px'
+                                                            }} />
+
                                                             <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
                                                             <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
                                                             <BlockContent b={contentBlockProps} update={updateBlock} fontSizeMultiplier={docStyle.size} handleAutoResize={handleAutoResize} isResizing={isActive && drag.mode === 'resize'} setContentOverflow={handleContentOverflow} maxAvailableH={maxAvailableH} />
