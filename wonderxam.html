@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wonderxam</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,6 +57,8 @@
             background-color: var(--bg);
             color: var(--text);
             user-select: none; 
+            /* Disable pinch zoom on mobile for the app shell */
+            touch-action: pan-x pan-y;
         }
         
         input, textarea {
@@ -98,9 +100,10 @@
             display: flex; 
             width: 100%; 
             height: 100%; 
-            overflow: hidden; 
+            /* overflow: hidden; */ /* REMOVED to prevent clipping of sidebar shadow */
             padding: 0; 
             gap: 0; 
+            animation: fadeIn 0.4s ease-out; /* Fade in editor when it loads */
         }
 
         /* Main Area */
@@ -119,7 +122,7 @@
         .top-bar { height: 64px; display: flex; align-items: center; padding: 0 24px; background: var(--bg); border-bottom: 1px solid transparent; flex-shrink: 0; z-index: 300; position: relative; }
         .top-bar::after { content: ''; position: absolute; left: 0; right: 14px; bottom: -24px; height: 24px; background: linear-gradient(to bottom, var(--bg), transparent); pointer-events: none; }
         .doc-title { font-family: 'Google Sans', sans-serif; font-size: 20px; background: transparent; border: 1px solid transparent; padding: 6px 12px; border-radius: 8px; width: 100%; max-width: 400px; outline: none; transition: 0.2s; }
-        .doc-title:hover { background: #e9d5ff; }
+        .doc-title:hover { background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .doc-title:focus { background: white; border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* Viewport */
@@ -193,16 +196,16 @@
             border-radius: 24px; 
             display: flex; 
             flex-direction: column; 
-            z-index: 50; 
+            z-index: 1500; /* Increased z-index to be on top */
             padding: 20px 16px; 
             gap: 16px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            margin: 16px 16px 16px 0; 
-            height: calc(100vh - 32px);
+            margin: 24px 16px 16px 0; 
+            height: calc(100vh - 40px);
             flex-shrink: 0;
         }
 
-        /* --- UNIFORM, SMOOTHER FADE-IN FOR ALL BLOCKS, WITHOUT POSITION SLIDE --- */
+        /* --- BLOCK STYLES --- */
         @keyframes blockFadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -210,39 +213,76 @@
 
         .block-wrapper { 
             position: absolute; 
-            background: white; 
+            background: transparent; /* Changed to transparent, inner content has white */
             border: 1px solid transparent; 
             border-radius: 12px; 
             box-sizing: border-box; 
             display: flex; 
             flex-direction: column; 
-            /* Only fade + shadow transitions so existing questions don't slide top-to-bottom */
-            transition: box-shadow 0.2s, opacity 0.35s ease-out; 
             z-index: 10; 
             opacity: 0;
             animation: blockFadeIn 0.35s ease-out forwards;
+            /* Added left, top, width, height to transition for smooth snapping */
+            transition: box-shadow 0.2s, opacity 0.35s ease-out, transform 0.3s ease, left 0.25s cubic-bezier(0.2, 0, 0.2, 1), top 0.25s cubic-bezier(0.2, 0, 0.2, 1), width 0.2s ease-out, height 0.2s ease-out; 
+            touch-action: none; /* Crucial for mobile dragging */
         }
 
-        .block-wrapper:hover { background-color: #fafafa; border-color: #ddd; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .block-wrapper.dragging { transition: none !important; z-index: 1000 !important; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; border-color: var(--primary) !important; background: white; }
+        /* Inner container for the smooth scale animation */
+        .block-scale-content {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 12px;
+            position: relative;
+            /* The bouncy scale transition */
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, border-color 0.2s;
+            transform-origin: center center;
+            border: 1px solid transparent;
+        }
+
+        .block-wrapper:hover .block-scale-content { 
+            background-color: #fafafa; 
+            border-color: #ddd; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        }
+        .block-wrapper:hover { z-index: 100; }
+
+        /* Dragging State */
+        .block-wrapper.dragging { 
+            z-index: 1000 !important; 
+            transition: top 0s, left 0s; /* Instant position update */
+        }
+
+        .block-wrapper.dragging .block-scale-content {
+            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; 
+            border-color: var(--primary) !important; 
+            background: white;
+            transform: scale(1.05); /* The smooth zoom */
+        }
         
         /* Dragging/Resizing Invalid State */
-        .block-wrapper.invalid, .block-wrapper.dragging.invalid {
+        .block-wrapper.invalid .block-scale-content, 
+        .block-wrapper.dragging.invalid .block-scale-content {
             border-color: #ef4444 !important;
             background-color: #fff1f2 !important;
             box-shadow: 0 0 0 1px #ef4444, 0 10px 30px rgba(239, 68, 68, 0.2) !important;
         }
 
-        .block-wrapper.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 8px 24px rgba(124, 58, 237, 0.15); z-index: 200; background: white; }
+        .block-wrapper.active .block-scale-content { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 1px var(--primary), 0 8px 24px rgba(124, 58, 237, 0.15); 
+            background: white; 
+        }
+        .block-wrapper.active { z-index: 200; }
         
         /* Collision Highlight */
-        .block-wrapper.collision-highlight { 
+        .block-wrapper.collision-highlight .block-scale-content { 
             background-color: #fee2e2 !important; 
             border: 2px solid #fca5a5 !important; 
-            z-index: 200 !important; 
         }
+        .block-wrapper.collision-highlight { z-index: 200 !important; }
 
-        /* Updated Drag Handle: Outside Left & Larger */
+        /* Drag Handle */
         .drag-handle { 
             position: absolute; 
             left: -42px; 
@@ -260,23 +300,56 @@
             background: white; 
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            touch-action: none; /* Prevent scroll on mobile */
         }
         .block-wrapper:hover .drag-handle { opacity: 1; }
-        .block-wrapper.dragging .drag-handle { cursor: grabbing; }
+        .block-wrapper.dragging .drag-handle { cursor: grabbing; opacity: 1; }
 
         .delete-btn { position: absolute; right: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
-        .delete-btn:hover { color: #d93025; background: #fce8e6; border-radius: 0 0 0 4px; }
+        .delete-btn:hover { color: #d93025; background: #fce8e6; border-radius: 0 12px 0 4px; }
         .block-wrapper:hover .delete-btn { opacity: 1; }
-        .resize-handle { position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; cursor: nwse-resize; opacity: 0; z-index: 50; }
-        .resize-handle::after { content: ''; position: absolute; bottom: 3px; right: 3px; width: 6px; height: 6px; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary); }
+        
+        .resize-handle { 
+            position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; /* Larger for touch */
+            cursor: nwse-resize; opacity: 0; z-index: 50; 
+            touch-action: none;
+        }
+        .resize-handle::after { content: ''; position: absolute; bottom: 4px; right: 4px; width: 6px; height: 6px; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary); }
         .block-wrapper:hover .resize-handle { opacity: 1; }
         .resize-handle-h { cursor: ew-resize; }
         
         .tool-btn { width: 100%; padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 12px; background: transparent; border: none; color: var(--text); font-family: 'Google Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; text-align: left; }
         .tool-btn:hover { background: #f3f4f6; }
         .tool-btn i { color: #5f6368; }
-        .btn-primary { width: 100%; padding: 12px; border-radius: 24px; background: var(--primary); color: white; border: none; font-family: 'Google Sans', sans-serif; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Updated Button Style - More Googlely */
+        .btn-primary { 
+            width: 100%; 
+            padding: 12px 20px; 
+            border-radius: 12px; /* Less rounded (was 24px) */
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            font-family: 'Google Sans', sans-serif; 
+            font-weight: 500; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            transition: box-shadow 0.2s, background-color 0.2s;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            filter: brightness(1.05);
+        }
+        .btn-primary:active {
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            filter: brightness(0.95);
+        }
         .btn-primary:disabled { opacity: 0.7; cursor: default; }
+        
         .fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
         
         /* INHOUSE BADGE STYLES */
@@ -316,8 +389,15 @@
             font-family: 'Roboto', sans-serif;
             animation: fadeIn 0.4s ease-out;
         }
+        
+        /* Home screen exit animation */
+        #homeScreen.exit-anim {
+            animation: fadeOut 0.4s ease-out forwards;
+            pointer-events: none;
+        }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; }}
         @keyframes heroEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
         .home-content {
@@ -860,38 +940,51 @@
             const updateBlock = (id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b));
             const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id!==id));
 
+            // Helper to get consistent coordinates for Mouse and Touch
+            const getPointerPos = (e) => {
+                if(e.touches && e.touches.length > 0) {
+                    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+                return { x: e.clientX, y: e.clientY };
+            };
+
             const startDrag = (e, id, mode) => {
-                e.preventDefault(); 
-                if(e.type==='touchstart') return;
+                // Prevent default behavior (especially for touch to prevent scrolling)
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+
+                const pos = getPointerPos(e);
                 const b = blocks.find(x=>x.id===id);
                 setDrag({ 
                     active: true, 
                     id, 
                     mode, 
-                    startX: e.clientX, 
-                    startY: e.clientY, 
+                    startX: pos.x, 
+                    startY: pos.y, 
                     origX: b.x, 
                     origY: b.y, 
                     origW: b.w, 
                     origH: b.h,
                     resizeW: b.w,
                     resizeH: b.h,
-                    snapX: b.x,
-                    snapY: b.y,
+                    snapX: b.x, 
+                    snapY: b.y, 
                     deltaX: 0, 
                     deltaY: 0,
                     isValid: true,
-                    collidingIds: []
+                    collidingIds: [] 
                 });
             };
 
             useEffect(() => {
                 const move = (e) => {
                     if(!drag.active) return;
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault(); // Stop scrolling while dragging
                     
-                    const dX = e.clientX - drag.startX;
-                    const dY = e.clientY - drag.startY;
+                    const pos = getPointerPos(e);
+                    
+                    const dX = pos.x - drag.startX;
+                    const dY = pos.y - drag.startY;
                     const gridDx = Math.round(dX / (CELL * zoom));
                     const gridDy = Math.round(dY / (CELL * zoom));
 
@@ -936,9 +1029,21 @@
                         }));
 
                     } else {
+                        const b = blocks.find(x => x.id === drag.id);
+                        
+                        // Define minimum requirements (logical constraints)
+                        let reqMinW = 1;
+                        let reqMinH = 1;
+                        
+                        if (b.type === 'header') {
+                            reqMinW = 6;
+                            reqMinH = 4;
+                        }
+
+                        // Allow resizing down to 1x1 visually, even if it violates requirements
                         let nw = Math.max(1, Math.min(COLS - drag.origX, drag.origW + gridDx));
                         let nh = Math.max(1, drag.origH + gridDy);
-                        const b = blocks.find(x => x.id === drag.id);
+                        
                         if(b.type === 'line') nh = 1;
 
                         const p = Math.floor(drag.origY / ROWS);
@@ -958,6 +1063,11 @@
                             }
                         }
 
+                        // Check against specific block requirements for the RED highlighting
+                        if (nw < reqMinW || nh < reqMinH) {
+                            valid = false;
+                        }
+
                         setDrag(prev => ({
                             ...prev,
                             resizeW: nw,
@@ -970,14 +1080,38 @@
                 
                 const up = () => {
                     if(drag.active) {
-                        if(drag.isValid) {
-                            if (drag.mode === 'move') {
+                        if (drag.mode === 'move') {
+                            if(drag.isValid) {
                                 updateBlock(drag.id, {x: drag.snapX, y: drag.snapY});
-                            } else {
-                                const isOverflowing = overflowMap[drag.id];
-                                if (!isOverflowing) {
-                                    updateBlock(drag.id, {w: drag.resizeW, h: drag.resizeH});
-                                }
+                            }
+                        } else {
+                            // RESIZE LOGIC: Snap to minimums if dragging smaller than allowed
+                            const b = blocks.find(x => x.id === drag.id);
+                            let reqMinW = 1; let reqMinH = 1;
+                            if (b.type === 'header') { reqMinW = 6; reqMinH = 4; }
+
+                            // Calculate what the size SHOULD be (clamped to minimums)
+                            const finalW = Math.max(drag.resizeW, reqMinW);
+                            const finalH = Math.max(drag.resizeH, reqMinH);
+
+                            // Check collision at this FINAL size (not the visually small dragged size)
+                            const otherBlocks = blocks.filter(x => x.id !== drag.id);
+                            let hasCollision = false;
+                            
+                            // Re-check bounding box collision with clamped dimensions
+                            for(let ob of otherBlocks) {
+                                const isOver = !(
+                                    b.x + finalW <= ob.x || 
+                                    b.x >= ob.x + ob.w || 
+                                    b.y + finalH <= ob.y || 
+                                    b.y >= ob.y + ob.h
+                                );
+                                if(isOver) { hasCollision = true; break; }
+                            }
+
+                            // Only apply if the "snapped" size doesn't hit anything
+                            if (!hasCollision) {
+                                updateBlock(drag.id, {w: finalW, h: finalH});
                             }
                         }
                     }
@@ -987,8 +1121,15 @@
                 if(drag.active) {
                     window.addEventListener('mousemove', move);
                     window.addEventListener('mouseup', up);
+                    window.addEventListener('touchmove', move, { passive: false });
+                    window.addEventListener('touchend', up);
                 }
-                return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
+                return () => { 
+                    window.removeEventListener('mousemove', move); 
+                    window.removeEventListener('mouseup', up);
+                    window.removeEventListener('touchmove', move);
+                    window.removeEventListener('touchend', up);
+                }
             }, [drag, blocks, zoom, overflowMap]);
 
             const doExport = async () => {
@@ -1065,11 +1206,14 @@
                                                         if (drag.mode === 'move') {
                                                             const startPixelY = (drag.origY - (i * ROWS)) * CELL; 
                                                             const startPixelX = drag.origX * CELL;
+                                                            
+                                                            // Update position directly via left/top instead of transform to allow CSS transition to animate the snap on release
                                                             styleOverride = {
-                                                                left: startPixelX,
-                                                                top: startPixelY,
-                                                                transform: `translate(${drag.deltaX / zoom}px, ${drag.deltaY / zoom}px) scale(1.05)`,
-                                                                zIndex: 999, transition: 'none', opacity: 0.9 
+                                                                left: startPixelX + (drag.deltaX / zoom),
+                                                                top: startPixelY + (drag.deltaY / zoom),
+                                                                zIndex: 999, 
+                                                                transition: 'none', // Disable transition during drag for 1:1 movement
+                                                                opacity: 0.9 
                                                             };
                                                         } else if (drag.mode === 'resize') {
                                                             displayW = drag.resizeW; displayH = drag.resizeH;
@@ -1092,19 +1236,15 @@
                                                                 ...styleOverride 
                                                             }}
                                                         >
-                                                            {/* mask to hide dots, with the SAME rounding as the block & ghost */}
-                                                            <div style={{
-                                                                position: 'absolute',
-                                                                inset: 0,
-                                                                backgroundColor: 'white',
-                                                                zIndex: -1,
-                                                                borderRadius: '12px'
-                                                            }} />
-
-                                                            <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
-                                                            <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
-                                                            <BlockContent b={contentBlockProps} update={updateBlock} fontSizeMultiplier={docStyle.size} handleAutoResize={handleAutoResize} isResizing={isActive && drag.mode === 'resize'} setContentOverflow={handleContentOverflow} maxAvailableH={maxAvailableH} />
-                                                            <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'resize')}}></div>
+                                                            {/* Wrapper for smooth scaling */}
+                                                            <div className="block-scale-content">
+                                                                <div className="drag-handle" onMouseDown={e=>startDrag(e, b.id, 'move')} onTouchStart={e=>startDrag(e, b.id, 'move')}>
+                                                                    <MatIcon name="drag_indicator"/>
+                                                                </div>
+                                                                <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
+                                                                <BlockContent b={contentBlockProps} update={updateBlock} fontSizeMultiplier={docStyle.size} handleAutoResize={handleAutoResize} isResizing={isActive && drag.mode === 'resize'} setContentOverflow={handleContentOverflow} maxAvailableH={maxAvailableH} />
+                                                                <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>startDrag(e, b.id, 'resize')} onTouchStart={e=>startDrag(e, b.id, 'resize')}></div>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}
@@ -1181,17 +1321,24 @@
         const HomeScreen = ({ onStart }) => {
             const [showModal, setShowModal] = useState(false);
             const [examName, setExamName] = useState('');
+            const [isExiting, setIsExiting] = useState(false); // New state for exit animation
 
             const handleCreate = () => {
-                if (examName.trim()) {
-                    onStart(examName);
-                } else {
-                    onStart("Untitled Exam");
-                }
+                // Trigger exit animation
+                setIsExiting(true);
+                
+                // Wait for animation to finish before starting
+                setTimeout(() => {
+                    if (examName.trim()) {
+                        onStart(examName);
+                    } else {
+                        onStart("Untitled Exam");
+                    }
+                }, 400); // 400ms matches the CSS animation duration
             };
 
             return (
-                <div id="homeScreen">
+                <div id="homeScreen" className={isExiting ? 'exit-anim' : ''}>
                     <div className="texture-layer"></div>
                     <div id="bg-light-caster"></div>
 
