@@ -201,7 +201,13 @@
             height: calc(100vh - 32px);
             flex-shrink: 0;
         }
-        
+
+        /* --- UNIFORM, SMOOTHER FADE-IN FOR ALL BLOCKS, WITHOUT POSITION SLIDE --- */
+        @keyframes blockFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .block-wrapper { 
             position: absolute; 
             background: white; 
@@ -210,15 +216,13 @@
             box-sizing: border-box; 
             display: flex; 
             flex-direction: column; 
-            transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                        top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                        width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                        height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                        box-shadow 0.2s, 
-                        opacity 0.2s; 
+            /* Only fade + shadow transitions so existing questions don't slide top-to-bottom */
+            transition: box-shadow 0.2s, opacity 0.35s ease-out; 
             z-index: 10; 
+            opacity: 0;
+            animation: blockFadeIn 0.35s ease-out forwards;
         }
+
         .block-wrapper:hover { background-color: #fafafa; border-color: #ddd; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .block-wrapper.dragging { transition: none !important; z-index: 1000 !important; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; border-color: var(--primary) !important; background: white; }
         
