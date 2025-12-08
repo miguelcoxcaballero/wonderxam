@@ -214,7 +214,7 @@
         .block-wrapper { 
             position: absolute; 
             background: transparent; /* Changed to transparent, inner content has white */
-            border: 1px solid transparent; 
+            border: 1px solid transparent; /* Reverted to transparent as removing the grey box fixes the issue cleanly */
             border-radius: 12px; 
             box-sizing: border-box; 
             display: flex; 
@@ -227,6 +227,12 @@
             touch-action: none; /* Crucial for mobile dragging */
         }
 
+        /* Image Block Specifics - Square corners */
+        .block-wrapper.type-image,
+        .block-wrapper.type-image .block-scale-content {
+            border-radius: 0 !important;
+        }
+
         /* Inner container for the smooth scale animation */
         .block-scale-content {
             width: 100%;
@@ -237,7 +243,7 @@
             /* The bouncy scale transition */
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, border-color 0.2s;
             transform-origin: center center;
-            border: 1px solid transparent;
+            border: 1px solid transparent; /* Reverted to transparent */
         }
 
         .block-wrapper:hover .block-scale-content { 
@@ -305,8 +311,33 @@
         .block-wrapper:hover .drag-handle { opacity: 1; }
         .block-wrapper.dragging .drag-handle { cursor: grabbing; opacity: 1; }
 
-        .delete-btn { position: absolute; right: 0; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; opacity: 0; transition: 0.2s; z-index: 50; }
-        .delete-btn:hover { color: #d93025; background: #fce8e6; border-radius: 0 12px 0 4px; }
+        /* Updated Delete Button - Bin inside rounded square */
+        .delete-btn { 
+            position: absolute; 
+            right: -12px; 
+            top: -12px; 
+            width: 32px; 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            color: #6b7280; 
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px; 
+            opacity: 0; 
+            transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1); 
+            z-index: 60; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .delete-btn:hover { 
+            color: #ef4444; 
+            background: #fff1f2; 
+            border-color: #fecaca;
+            transform: scale(1.1);
+        }
+        .delete-btn .mat-icon { font-size: 18px; }
         .block-wrapper:hover .delete-btn { opacity: 1; }
         
         .resize-handle { 
@@ -399,6 +430,16 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; }}
         @keyframes heroEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Refined Googlely Menu Animation */
+        @keyframes menuEnter {
+            0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-menu { 
+            animation: menuEnter 0.2s cubic-bezier(0.05, 0.7, 0.1, 1.0) forwards; 
+            transform-origin: top center;
+        }
 
         .home-content {
             text-align: center;
@@ -526,20 +567,20 @@
         const PAGE_GAP = 40; // Gap between pages in px
 
         const FONTS = [
-            { name: 'Lexend (Dyslexic)', val: "'Lexend', sans-serif" },
-            { name: 'Roboto (Sans)', val: "'Roboto', sans-serif" },
-            { name: 'Arial', val: "Arial, sans-serif" },
+            { name: 'Arial (Dyslexic)', val: "Arial, sans-serif" },
             { name: 'Calibri', val: "Calibri, sans-serif" },
-            { name: 'Times New Roman', val: "'Times New Roman', serif" },
-            { name: 'Open Sans', val: "'Open Sans', sans-serif" },
-            { name: 'Lato', val: "'Lato', sans-serif" },
-            { name: 'Montserrat', val: "'Montserrat', sans-serif" },
+            { name: 'Comic Neue (Dyslexic)', val: "'Comic Neue', cursive" },
+            { name: 'Inconsolata (Mono)', val: "'Inconsolata', monospace" },
             { name: 'Inter', val: "'Inter', sans-serif" },
+            { name: 'Lato', val: "'Lato', sans-serif" },
+            { name: 'Lexend (Dyslexic)', val: "'Lexend', sans-serif" },
             { name: 'Lora (Serif)', val: "'Lora', serif" },
             { name: 'Merriweather', val: "'Merriweather', serif" },
+            { name: 'Montserrat', val: "'Montserrat', sans-serif" },
+            { name: 'Open Sans', val: "'Open Sans', sans-serif" },
             { name: 'Playfair Display', val: "'Playfair Display', serif" },
-            { name: 'Inconsolata (Mono)', val: "'Inconsolata', monospace" },
-            { name: 'Comic Neue (Dyslexic)', val: "'Comic Neue', cursive" },
+            { name: 'Roboto (Sans)', val: "'Roboto', sans-serif" },
+            { name: 'Times New Roman', val: "'Times New Roman', serif" },
         ];
         
         const FONT_SIZES = [
@@ -547,6 +588,93 @@
             { label: 'Normal', val: 100 },
             { label: 'Large', val: 125 }
         ];
+
+        // --- CUSTOM SELECT COMPONENT (GOOGLE STYLE) ---
+        const CustomSelect = ({ label, value, options, onChange }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+            const triggerRef = useRef(null);
+
+            useEffect(() => {
+                const handleResize = () => setIsOpen(false);
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            const toggleOpen = () => {
+                if (!isOpen && triggerRef.current) {
+                    const rect = triggerRef.current.getBoundingClientRect();
+                    setCoords({
+                        top: rect.bottom, // Use viewport coordinates directly for fixed positioning
+                        left: rect.left,
+                        width: rect.width
+                    });
+                }
+                setIsOpen(!isOpen);
+            };
+
+            const selectedOption = options.find(o => o.val === value) || options[0];
+            const displayLabel = selectedOption.label || selectedOption.name; // Handle mixed data structure
+
+            return (
+                <div className="relative mb-4" ref={triggerRef}>
+                    {/* Trigger Button */}
+                    <div 
+                        className={`relative bg-gray-50 border-b border-gray-300 rounded-t-md hover:bg-gray-100 transition-all cursor-pointer pt-5 pb-2 px-3 h-14 flex items-center group ${isOpen ? 'bg-gray-100 border-purple-500' : ''}`}
+                        onClick={toggleOpen}
+                    >
+                        <label className={`absolute left-3 transition-all duration-200 pointer-events-none uppercase font-bold tracking-wide ${isOpen || value ? 'top-1.5 text-[10px] text-purple-600' : 'top-4 text-xs text-gray-500'}`}>
+                            {label}
+                        </label>
+                        <div 
+                            className="text-sm text-gray-800 font-normal truncate w-full pr-6 mt-1"
+                            style={{ fontFamily: label === 'Font Family' ? value : 'inherit' }}
+                        >
+                            {displayLabel}
+                        </div>
+                        <div className={`absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                            <MatIcon name="arrow_drop_down" />
+                        </div>
+                        {/* Active Indicator Line */}
+                        <div className={`absolute bottom-[-1px] left-0 h-[2px] bg-purple-600 transition-all duration-300 ${isOpen ? 'w-full' : 'w-0'}`}></div>
+                    </div>
+
+                    {/* Portal Dropdown */}
+                    {isOpen && ReactDOM.createPortal(
+                        <>
+                            {/* Backdrop to close */}
+                            <div className="fixed inset-0 z-[1999]" onClick={() => setIsOpen(false)}></div>
+                            
+                            {/* Dropdown Menu */}
+                            <div 
+                                className="fixed z-[2000] bg-white rounded-b-lg rounded-t-sm shadow-xl max-h-60 overflow-y-auto overflow-x-hidden animate-menu origin-top border border-gray-100"
+                                style={{ 
+                                    top: coords.top, 
+                                    left: coords.left, 
+                                    width: coords.width,
+                                }}
+                            >
+                                {options.map((opt, i) => (
+                                    <div 
+                                        key={i} 
+                                        className={`px-4 py-3 text-sm cursor-pointer hover:bg-purple-50 transition-colors flex items-center justify-between ${opt.val === value ? 'bg-purple-50 text-purple-700 font-normal' : 'text-gray-700'}`}
+                                        onClick={() => {
+                                            onChange(opt.val);
+                                            setIsOpen(false);
+                                        }}
+                                        style={{ fontFamily: label === 'Font Family' ? opt.val : 'inherit' }}
+                                    >
+                                        <span className="truncate">{opt.label || opt.name}</span>
+                                        {opt.val === value && <MatIcon name="check" className="text-[18px] shrink-0 ml-2"/>}
+                                    </div>
+                                ))}
+                            </div>
+                        </>,
+                        document.body
+                    )}
+                </div>
+            );
+        };
 
         // --- NEW GRID COMPONENT FOR ANIMATED DOTS ---
         const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
@@ -725,8 +853,8 @@
                                     <button onClick={() => {
                                         const n = b.data.opts.filter((_, idx) => idx !== i);
                                         update(b.id, {data: {...b.data, opts: n}});
-                                    }} className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover/opt:opacity-100 no-export mt-1">
-                                        <MatIcon name="close" className="text-[16px]" />
+                                    }} className="w-7 h-7 flex items-center justify-center rounded-md bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover/opt:opacity-100 no-export mt-0.5 ml-2 border border-gray-100 hover:border-red-200 shadow-sm">
+                                        <MatIcon name="delete" className="text-[16px]" />
                                     </button>
                                 </div>
                             ))}
@@ -1167,16 +1295,7 @@
                                             <div className="relative w-full h-full">
                                                 <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
                                                 
-                                                {blocks.filter(b => {
-                                                    const start = b.y; const end = b.y + b.h;
-                                                    const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
-                                                    return start < pageEnd && end > pageStart && b.id !== drag.id;
-                                                }).map(b => (
-                                                    <div key={'occ-'+b.id} className="occupied-space" style={{
-                                                        left: b.x*CELL, top: (b.y - i*ROWS)*CELL,
-                                                        width: b.w*CELL, height: b.h*CELL
-                                                    }}/>
-                                                ))}
+                                                {/* Removed occupied-space loop to fix grey perimeter artifacts */}
 
                                                 {drag.active && drag.mode === 'move' && (() => {
                                                     const start = drag.snapY; const end = drag.snapY + drag.origH;
@@ -1227,7 +1346,7 @@
                                                     return (
                                                         <div 
                                                             key={b.id} 
-                                                            className={`block-wrapper ${isActive ? 'dragging' : ''} ${isInvalid ? 'invalid' : ''} ${isColliding ? 'collision-highlight' : ''} ${drag.active && !isActive && !isColliding ? 'scale-[0.98] opacity-90' : ''}`}
+                                                            className={`block-wrapper ${b.type === 'image' ? 'type-image' : ''} ${isActive ? 'dragging' : ''} ${isInvalid ? 'invalid' : ''} ${isColliding ? 'collision-highlight' : ''} ${drag.active && !isActive && !isColliding ? 'scale-[0.98] opacity-90' : ''}`}
                                                             style={{
                                                                 left: displayX * CELL,
                                                                 top: (displayY - i*ROWS) * CELL,
@@ -1241,7 +1360,9 @@
                                                                 <div className="drag-handle" onMouseDown={e=>startDrag(e, b.id, 'move')} onTouchStart={e=>startDrag(e, b.id, 'move')}>
                                                                     <MatIcon name="drag_indicator"/>
                                                                 </div>
-                                                                <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
+                                                                <div className="delete-btn" onClick={()=>removeBlock(b.id)}>
+                                                                    <MatIcon name="delete"/>
+                                                                </div>
                                                                 <BlockContent b={contentBlockProps} update={updateBlock} fontSizeMultiplier={docStyle.size} handleAutoResize={handleAutoResize} isResizing={isActive && drag.mode === 'resize'} setContentOverflow={handleContentOverflow} maxAvailableH={maxAvailableH} />
                                                                 <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>startDrag(e, b.id, 'resize')} onTouchStart={e=>startDrag(e, b.id, 'resize')}></div>
                                                             </div>
@@ -1272,23 +1393,23 @@
 
                         <div className="overflow-y-auto flex-1 flex flex-col gap-4 pr-1">
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                                <div className="text-xs font-bold text-gray-500 uppercase mb-2">Document Style</div>
-                                <select className="w-full p-2 rounded border border-gray-300 bg-white mb-3 text-sm" 
-                                    value={docStyle.font} onChange={e=>setDocStyle({...docStyle, font:e.target.value})}>
-                                    {FONTS.map(f => <option key={f.name} value={f.val}>{f.name}</option>)}
-                                </select>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">Font Size:</span>
-                                    <select 
-                                        className="p-1 rounded border border-gray-300 bg-white text-sm"
-                                        value={docStyle.size} 
-                                        onChange={e=>setDocStyle({...docStyle, size:Number(e.target.value)})}
-                                    >
-                                        {FONT_SIZES.map(s => (
-                                            <option key={s.label} value={s.val}>{s.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <div className="text-xs font-bold text-gray-500 uppercase mb-3">Document Style</div>
+                                
+                                {/* GOOGLE STYLE FONT FAMILY SELECT */}
+                                <CustomSelect 
+                                    label="Font Family"
+                                    value={docStyle.font}
+                                    options={FONTS}
+                                    onChange={v => setDocStyle({...docStyle, font: v})}
+                                />
+
+                                {/* GOOGLE STYLE FONT SIZE SELECT */}
+                                <CustomSelect 
+                                    label="Font Size"
+                                    value={docStyle.size}
+                                    options={FONT_SIZES}
+                                    onChange={v => setDocStyle({...docStyle, size: Number(v)})}
+                                />
                             </div>
 
                             <div>
