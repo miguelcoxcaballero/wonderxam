@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Wonderxam</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +33,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inconsolata:wght@400;700&family=Inter:wght@400;600&family=Lato:wght@400;700&family=Lexend:wght@300;400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;600&family=Roboto:wght@400;500;700&family=Comfortaa:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inconsolata:wght@400;700&family=Inter:wght@400;600&family=Lato:wght@400;700&family=Lexend:wght@300;400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;600&family=Roboto:wght@400;500;700&family=Comfortaa:wght@300;400;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
 
@@ -44,13 +44,19 @@
             --surface: #ffffff;
             --text: #1f1f1f;
             --border: #e5e7eb;
+            --brand-copper: #d97736;
         }
 
-        body { 
+        /* Prevent scrolling on the document root */
+        /* FIX: Ensure #root also takes full height so flex children work */
+        html, body, #root {
+            margin: 0; 
+            height: 100%; 
+            width: 100%;
+            overflow: hidden; /* Stop body scroll, let viewport handle it */
             font-family: 'Roboto', sans-serif; 
             background-color: var(--bg);
             color: var(--text);
-            margin: 0; height: 100vh; overflow: hidden;
             user-select: none; 
         }
         
@@ -58,6 +64,7 @@
             user-select: text;
         }
 
+        /* SCROLLBAR STYLING – MATCH OLD LOOK */
         ::-webkit-scrollbar {
             width: 14px;
             height: 14px;
@@ -87,17 +94,17 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Updated App Shell for Layout */
+        /* App Shell */
         .app-shell { 
             display: flex; 
-            width: 100vw; 
-            height: 100vh; 
-            overflow: hidden;
-            padding: 0; /* Remove padding from shell */
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            padding: 0; 
             gap: 0; 
         }
 
-        /* Updated Main Area Panel - Full Size, No Card Style */
+        /* Main Area */
         .main-area { 
             flex: 1; 
             display: flex; 
@@ -105,9 +112,9 @@
             height: 100%; 
             position: relative; 
             background: var(--bg);
-            border-radius: 0; 
             border: none;
             overflow: hidden; 
+            min-width: 0; 
         }
 
         .top-bar { height: 64px; display: flex; align-items: center; padding: 0 24px; background: var(--bg); border-bottom: 1px solid transparent; flex-shrink: 0; z-index: 300; position: relative; }
@@ -115,8 +122,36 @@
         .doc-title { font-family: 'Google Sans', sans-serif; font-size: 20px; background: transparent; border: 1px solid transparent; padding: 6px 12px; border-radius: 8px; width: 100%; max-width: 400px; outline: none; transition: 0.2s; }
         .doc-title:hover { background: #e9d5ff; }
         .doc-title:focus { background: white; border-color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .viewport { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px; }
-        .pages-scale-wrapper { display: flex; flex-direction: column; gap: 40px; transform-origin: top center; transition: transform 0.1s linear; }
+        
+        /* Viewport - SCROLL FIX */
+        .viewport { 
+            flex: 1;
+            height: 100%; /* Ensure it fills the vertical space */
+            overflow-y: auto;   /* Force vertical scroll */
+            overflow-x: hidden; /* Force hide horizontal scroll */
+            padding: 40px 0;    
+            display: block; /* Standard block layout helps scrolling behavior */
+            width: 100%; 
+            position: relative;
+        }
+        
+        /* Inner container handles centering and sizing */
+        .zoom-outer-container {
+            width: 100%;
+            min-height: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+            box-sizing: border-box;
+        }
+
+        .pages-scale-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 40px; 
+            transform-origin: top center; 
+        }
+
         .a4-page { width: 794px; height: 1123px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: visible; box-sizing: border-box; border-radius: 6px; }
         
         /* Grid Lines */
@@ -144,7 +179,7 @@
             border: 2px dashed var(--primary);
             border-radius: 6px;
             pointer-events: none;
-            z-index: 50; /* Above static blocks (10), below drag (1000) */
+            z-index: 50; 
             transition: all 0.1s;
         }
         .snap-ghost.invalid {
@@ -152,7 +187,7 @@
             border-color: #ef4444;
         }
 
-        /* Updated Sidebar: Floating Card Style with Margins */
+        /* Sidebar */
         .sidebar { 
             width: 340px; 
             background: var(--surface); 
@@ -164,10 +199,9 @@
             padding: 20px 16px; 
             gap: 16px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            
-            /* Floating Positioning */
-            margin: 16px 16px 16px 0; /* Top Right Bottom Left */
+            margin: 16px 16px 16px 0; 
             height: calc(100vh - 32px);
+            flex-shrink: 0;
         }
         
         .block-wrapper { position: absolute; background: white; border: 1px solid transparent; border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s; z-index: 10; }
@@ -237,6 +271,93 @@
             letter-spacing: -0.5px;
         }
 
+        /* --- HOME SCREEN STYLES --- */
+        #homeScreen {
+            position: absolute; inset: 0; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #fcf6f3;
+            font-family: 'Roboto', sans-serif;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
+        @keyframes heroEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .home-content {
+            text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 24px;
+            animation: heroEnter 0.8s cubic-bezier(0.2, 0.0, 0, 1.0);
+            width: 100%; max-width: 600px;
+        }
+
+        .home-icon { font-size: 64px; color: #7c3aed; margin-bottom: 8px; }
+        .home-title { font-family: 'Google Sans', sans-serif; font-size: 44px; font-weight: 400; color: #201a17; margin: 0; }
+        .home-sub { font-size: 16px; color: #50453f; margin-top: -16px; margin-bottom: 16px; }
+
+        .btn-home {
+            height: 56px; padding: 0 32px; border-radius: 28px;
+            background: #7c3aed; color: #ffffff;
+            border: none; font-family: 'Google Sans', sans-serif; font-size: 16px; font-weight: 500;
+            cursor: pointer; display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-home:hover { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-home:active { transform: scale(0.98); }
+
+        #homeScreen .inhouse-badge {
+            position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+        }
+
+        .texture-layer {
+            position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            opacity: 0.4; pointer-events: none; z-index: -1; mix-blend-mode: overlay;
+        }
+        
+        #bg-light-caster {
+            position: absolute; top: 50%; left: 50%; width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+            border-radius: 50%; filter: blur(60px); transform: translate(-50%, -50%); pointer-events: none; z-index: 0;
+        }
+
+        /* --- NAMING MODAL --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-card {
+            background: white; width: 100%; max-width: 400px; padding: 24px; border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; gap: 24px;
+            animation: heroEnter 0.3s var(--ease-spring);
+        }
+        .modal-title { font-family: 'Google Sans'; font-size: 24px; color: #1f1f1f; }
+        .input-group { position: relative; }
+        .mat-input {
+            width: 100%; height: 56px; border: 1px solid #7c3aed;
+            border-radius: 4px; background: transparent; padding: 0 16px;
+            color: #1f1f1f; font-size: 16px; outline: none;
+        }
+        .input-label {
+            position: absolute; left: 12px; top: -10px; background: white;
+            padding: 0 4px; font-size: 12px; color: #7c3aed;
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+        .btn-text {
+            height: 40px; padding: 0 12px; border: none; background: transparent;
+            color: #7c3aed; font-family: 'Google Sans'; font-weight: 500;
+            cursor: pointer; border-radius: 20px; transition: 0.2s;
+        }
+        .btn-text:hover { background: rgba(124, 58, 237, 0.05); }
+        .btn-fill {
+            height: 40px; padding: 0 24px; border: none; border-radius: 20px;
+            background: #7c3aed; color: white;
+            font-family: 'Google Sans'; font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+        .btn-fill:hover { filter: brightness(1.1); }
+
         @media (max-width: 1024px) {
             .app-shell { flex-direction: column; padding: 0; gap: 0; }
             .main-area { border-radius: 0; border: none; }
@@ -254,15 +375,6 @@
             .top-bar { padding: 0 16px; }
             .viewport { padding: 20px 10px; }
         }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .exporting .no-export { display: none !important; }
-        .export-only { display: none; }
-        .exporting .export-only { display: block; white-space: pre-wrap; }
-        .exporting .hide-on-export { display: none !important; }
-        .exporting .a4-page { margin: 0; box-shadow: none; border-radius: 0; }
-        /* When exporting, hide the grid and snap ghosts */
-        .exporting .grid-layer { display: none; }
-        .exporting .occupied-space, .exporting .snap-ghost { display: none; }
     </style>
 </head>
 <body>
@@ -282,6 +394,7 @@
         const ROWS = 27; // Rows PER PAGE
         const MARGIN_X = (A4_W - (COLS * CELL)) / 2;
         const MARGIN_Y = (A4_H - (ROWS * CELL)) / 2;
+        const PAGE_GAP = 40; // Gap between pages in px
 
         const FONTS = [
             { name: 'Lexend (Dyslexic)', val: "'Lexend', sans-serif" },
@@ -544,14 +657,14 @@
             }
         };
 
-        /* --- MAIN APP --- */
-        function App() {
+        // --- EXAM EDITOR COMPONENT ---
+        const ExamEditor = ({ initialTitle }) => {
             const [blocks, setBlocks] = useState([]);
             const [docStyle, setDocStyle] = useState({ font: FONTS[0].val, size: 100 });
             const [zoom, setZoom] = useState(1);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [exporting, setExporting] = useState(false);
-            const [title, setTitle] = useState("Untitled Exam");
+            const [title, setTitle] = useState(initialTitle || "Untitled Exam");
             const [overflowMap, setOverflowMap] = useState({});
 
             const containerRef = useRef(null);
@@ -582,7 +695,7 @@
                 const p = Math.floor(b.y / ROWS);
                 const pageEnd = (p + 1) * ROWS;
                 let limit = pageEnd - b.y; 
-                return 1000; // Allow huge expansion because we push things away
+                return 1000; 
             }, [blocks]);
 
             // Auto Zoom on Mount
@@ -590,12 +703,12 @@
                 const fit = () => {
                     if(!containerRef.current) return;
                     const w = containerRef.current.clientWidth;
-                    const horizontalPadding = 40; // 20px left + 20px right in .viewport
+                    const horizontalPadding = 40; 
                     const fullPageWidth = A4_W + horizontalPadding;
 
                     if (w < fullPageWidth) {
                         const rawScale = (w - horizontalPadding) / A4_W;
-                        const safeScale = Math.max(0.1, rawScale * 0.97); // small safety factor to avoid horizontal scroll
+                        const safeScale = Math.max(0.1, rawScale * 0.97); 
                         setZoom(safeScale);
                     } else {
                         setZoom(1);
@@ -637,7 +750,6 @@
                     const block = newBlocks[idx];
                     block.h = clampedH;
                     
-                    // Page boundary logic for the growing block
                     const currentRow = block.y;
                     const pageIndex = Math.floor(currentRow / ROWS);
                     const pageStart = pageIndex * ROWS;
@@ -649,40 +761,26 @@
                         }
                     }
 
-                    // Push logic (Recursive)
                     const pushDown = (pusherId) => {
                         const pusher = newBlocks.find(x => x.id === pusherId);
                         
                         newBlocks.forEach(victim => {
                             if (victim.id === pusher.id) return;
-                            
-                            // Check Horizontal Overlap
                             const isHorizOverlapping = !(victim.x + victim.w <= pusher.x || victim.x >= pusher.x + pusher.w);
-                            
                             if (isHorizOverlapping) {
-                                // Check Vertical Overlap
-                                // If victim is "visually" overlapping the new area of pusher
                                 if (victim.y < pusher.y + pusher.h && victim.y + victim.h > pusher.y) {
-                                    
-                                    // Move victim down
                                     const neededY = pusher.y + pusher.h;
                                     const diff = neededY - victim.y;
-                                    
                                     if (diff > 0) {
                                         victim.y += diff;
-                                        
-                                        // Check page boundary for victim
                                         const vPageIndex = Math.floor(victim.y / ROWS);
                                         const vPageEnd = (vPageIndex + 1) * ROWS;
-                                        
                                         if (victim.y + victim.h > vPageEnd) {
                                             const vPageStart = vPageIndex * ROWS;
                                             if (victim.y !== vPageStart) {
                                                 victim.y = (vPageIndex + 1) * ROWS;
                                             }
                                         }
-                                        
-                                        // Recursively push things below this victim
                                         pushDown(victim.id);
                                     }
                                 }
@@ -702,12 +800,12 @@
                 const qNum = blocks.filter(b=>['mcq','short','tf'].includes(b.type)).length + 1;
 
                 if(type==='header'){w=18;h=5; data={inst:'', title:'', logo:null};}
-                else if(type==='text'){w=18;h=1; data={text:''};} // Default to 1 line
+                else if(type==='text'){w=18;h=1; data={text:''};} 
                 else if(type==='line'){w=18;h=1; data={};}
                 else if(type==='image'){w=6;h=6; data={src:null};}
-                else if(type==='mcq'){w=18;h=1; data={num:qNum+'.', q:'', opts:['']};} // 1 line, 1 option default
-                else if(type==='short'){w=18;h=2; data={num:qNum+'.', q:''};} // 1 line
-                else if(type==='tf'){w=18;h=1; data={num:qNum+'.', q:''};} // 1 line
+                else if(type==='mcq'){w=18;h=1; data={num:qNum+'.', q:'', opts:['']};} 
+                else if(type==='short'){w=18;h=2; data={num:qNum+'.', q:''};} 
+                else if(type==='tf'){w=18;h=1; data={num:qNum+'.', q:''};} 
 
                 let y = 0;
                 let found = false;
@@ -847,7 +945,7 @@
                 const up = () => {
                     if(drag.active) {
                         if(drag.isValid) {
-                            if(drag.mode === 'move') {
+                            if (drag.mode === 'move') {
                                 updateBlock(drag.id, {x: drag.snapX, y: drag.snapY});
                             } else {
                                 const isOverflowing = overflowMap[drag.id];
@@ -896,131 +994,95 @@
                         </div>
                         
                         <div className="viewport" ref={containerRef}>
-                            <div className="pages-scale-wrapper" style={{ transform: `scale(${zoom})`, fontFamily: docStyle.font, fontSize: (16 * (docStyle.size / 100)) + 'px' }}>
-                                {Array.from({length: totalPages}).map((_, i) => (
-                                    <div key={i} className="a4-page" style={{padding: `${MARGIN_Y}px ${MARGIN_X}px`}}>
-                                        <div className="relative w-full h-full">
-                                            
-                                            {/* --- GRID LAYER (Programmatic Dots) --- */}
-                                            {/* CHANGED: Pass drag.id if active, regardless of mode (move OR resize) */}
-                                            <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
+                            <div className="zoom-outer-container" style={{ minHeight: (A4_H + PAGE_GAP) * totalPages * zoom }}>
+                                <div className="pages-scale-wrapper" style={{ transform: `scale(${zoom})`, fontFamily: docStyle.font, fontSize: (16 * (docStyle.size / 100)) + 'px' }}>
+                                    {Array.from({length: totalPages}).map((_, i) => (
+                                        <div key={i} className="a4-page" style={{padding: `${MARGIN_Y}px ${MARGIN_X}px`}}>
+                                            <div className="relative w-full h-full">
+                                                <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
+                                                
+                                                {/* Render Occupied Ghosts */}
+                                                {blocks.filter(b => {
+                                                    const start = b.y; const end = b.y + b.h;
+                                                    const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
+                                                    return start < pageEnd && end > pageStart && b.id !== drag.id;
+                                                }).map(b => (
+                                                    <div key={'occ-'+b.id} className="occupied-space" style={{
+                                                        left: b.x*CELL, top: (b.y - i*ROWS)*CELL,
+                                                        width: b.w*CELL, height: b.h*CELL
+                                                    }}/>
+                                                ))}
 
-                                            {/* RENDER OCCUPIED GHOSTS (Gray) */}
-                                            {blocks.filter(b => {
-                                                const start = b.y; const end = b.y + b.h;
-                                                const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
-                                                return start < pageEnd && end > pageStart && b.id !== drag.id;
-                                            }).map(b => (
-                                                <div key={'occ-'+b.id} className="occupied-space" style={{
-                                                    left: b.x*CELL, top: (b.y - i*ROWS)*CELL,
-                                                    width: b.w*CELL, height: b.h*CELL
-                                                }}/>
-                                            ))}
+                                                {/* Render Snap Ghost */}
+                                                {drag.active && drag.mode === 'move' && (() => {
+                                                    const start = drag.snapY; const end = drag.snapY + drag.origH;
+                                                    const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
+                                                    if(start < pageEnd && end > pageStart) {
+                                                        return (
+                                                            <div className={`snap-ghost ${!drag.isValid ? 'invalid' : ''}`} style={{
+                                                                left: drag.snapX*CELL, top: (drag.snapY - i*ROWS)*CELL,
+                                                                width: drag.origW*CELL, height: drag.origH*CELL
+                                                            }}/>
+                                                        );
+                                                    }
+                                                })()}
 
-                                            {/* RENDER ACTIVE SNAP GHOST (Purple/Red) */}
-                                            {drag.active && drag.mode === 'move' && (() => {
-                                                const start = drag.snapY; const end = drag.snapY + drag.origH;
-                                                const pageStart = i*ROWS; const pageEnd = (i+1)*ROWS;
-                                                if(start < pageEnd && end > pageStart) {
-                                                    return (
-                                                        <div className={`snap-ghost ${!drag.isValid ? 'invalid' : ''}`} style={{
-                                                            left: drag.snapX*CELL, top: (drag.snapY - i*ROWS)*CELL,
-                                                            width: drag.origW*CELL, height: drag.origH*CELL
-                                                        }}/>
-                                                    );
-                                                }
-                                            })()}
+                                                {/* Render Blocks */}
+                                                {blocks.filter(b => {
+                                                    const start = b.y; const end = b.y + b.h;
+                                                    const pageStart = i * ROWS; const pageEnd = (i + 1) * ROWS;
+                                                    return start < pageEnd && end > pageStart;
+                                                }).map(b => {
+                                                    const isActive = drag.active && drag.id === b.id;
+                                                    const isColliding = drag.active && drag.collidingIds.includes(b.id);
+                                                    const isOverflow = overflowMap[b.id] && isActive;
+                                                    const isInvalid = isActive && (!drag.isValid || isOverflow);
+                                                    let displayX = b.x, displayY = b.y, displayW = b.w, displayH = b.h, styleOverride = {};
 
-                                            {/* RENDER BLOCKS */}
-                                            {blocks.filter(b => {
-                                                const start = b.y;
-                                                const end = b.y + b.h;
-                                                const pageStart = i * ROWS;
-                                                const pageEnd = (i + 1) * ROWS;
-                                                return start < pageEnd && end > pageStart;
-                                            }).map(b => {
-                                                const isActive = drag.active && drag.id === b.id;
-                                                const isColliding = drag.active && drag.collidingIds.includes(b.id);
-                                                const isOverflow = overflowMap[b.id] && isActive;
-                                                const isInvalid = isActive && (!drag.isValid || isOverflow);
-
-                                                let displayX = b.x;
-                                                let displayY = b.y;
-                                                let displayW = b.w;
-                                                let displayH = b.h;
-                                                let styleOverride = {};
-
-                                                if (isActive) {
-                                                    if (drag.mode === 'move') {
-                                                        const startPixelY = (drag.origY - (i * ROWS)) * CELL; 
-                                                        const startPixelX = drag.origX * CELL;
-                                                        
-                                                        styleOverride = {
-                                                            left: startPixelX,
-                                                            top: startPixelY,
-                                                            transform: `translate(${drag.deltaX / zoom}px, ${drag.deltaY / zoom}px) scale(1.05)`,
-                                                            zIndex: 999,
-                                                            transition: 'none',
-                                                            opacity: 0.9 
-                                                        };
-                                                    } else if (drag.mode === 'resize') {
-                                                        displayW = drag.resizeW;
-                                                        displayH = drag.resizeH;
-                                                        styleOverride = {
-                                                            zIndex: 999,
-                                                            transition: 'none'
+                                                    if (isActive) {
+                                                        if (drag.mode === 'move') {
+                                                            const startPixelY = (drag.origY - (i * ROWS)) * CELL; 
+                                                            const startPixelX = drag.origX * CELL;
+                                                            styleOverride = {
+                                                                left: startPixelX,
+                                                                top: startPixelY,
+                                                                transform: `translate(${drag.deltaX / zoom}px, ${drag.deltaY / zoom}px) scale(1.05)`,
+                                                                zIndex: 999, transition: 'none', opacity: 0.9 
+                                                            };
+                                                        } else if (drag.mode === 'resize') {
+                                                            displayW = drag.resizeW; displayH = drag.resizeH;
+                                                            styleOverride = { zIndex: 999, transition: 'none' }
                                                         }
                                                     }
-                                                }
 
-                                                const contentBlockProps = isActive && drag.mode === 'resize' 
-                                                    ? { ...b, w: drag.resizeW, h: drag.resizeH } 
-                                                    : b;
+                                                    const contentBlockProps = isActive && drag.mode === 'resize' ? { ...b, w: drag.resizeW, h: drag.resizeH } : b;
+                                                    const maxAvailableH = getMaxHeight(b);
 
-                                                const maxAvailableH = getMaxHeight(b);
-
-                                                return (
-                                                    <div 
-                                                        key={b.id} 
-                                                        className={`block-wrapper ${isActive ? 'dragging' : ''} ${isInvalid ? 'invalid' : ''} ${isColliding ? 'collision-highlight' : ''} ${drag.active && !isActive && !isColliding ? 'scale-[0.98] opacity-90' : ''}`}
-                                                        style={{
-                                                            left: displayX * CELL,
-                                                            top: (displayY - i*ROWS) * CELL,
-                                                            width: displayW * CELL,
-                                                            height: displayH * CELL,
-                                                            ...styleOverride 
-                                                        }}
-                                                    >
-                                                        {/* --- MASK TO HIDE DOTS --- */}
-                                                        <div style={{
-                                                            position: 'absolute',
-                                                            inset: 0,
-                                                            backgroundColor: 'white',
-                                                            zIndex: -1,
-                                                            borderRadius: '0px'
-                                                        }} />
-
-                                                        <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
-                                                        <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
-                                                        
-                                                        <BlockContent 
-                                                            b={contentBlockProps}
-                                                            update={updateBlock} 
-                                                            fontSizeMultiplier={docStyle.size}
-                                                            handleAutoResize={handleAutoResize}
-                                                            isResizing={isActive && drag.mode === 'resize'}
-                                                            setContentOverflow={handleContentOverflow}
-                                                            maxAvailableH={maxAvailableH}
-                                                        />
-                                                        
-                                                        <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'resize')}}></div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    return (
+                                                        <div 
+                                                            key={b.id} 
+                                                            className={`block-wrapper ${isActive ? 'dragging' : ''} ${isInvalid ? 'invalid' : ''} ${isColliding ? 'collision-highlight' : ''} ${drag.active && !isActive && !isColliding ? 'scale-[0.98] opacity-90' : ''}`}
+                                                            style={{
+                                                                left: displayX * CELL,
+                                                                top: (displayY - i*ROWS) * CELL,
+                                                                width: displayW * CELL,
+                                                                height: displayH * CELL,
+                                                                ...styleOverride 
+                                                            }}
+                                                        >
+                                                            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'white', zIndex: -1, borderRadius: '0px' }} />
+                                                            <div className="drag-handle" onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'move')}}><MatIcon name="drag_indicator"/></div>
+                                                            <div className="delete-btn" onClick={()=>removeBlock(b.id)}><MatIcon name="close"/></div>
+                                                            <BlockContent b={contentBlockProps} update={updateBlock} fontSizeMultiplier={docStyle.size} handleAutoResize={handleAutoResize} isResizing={isActive && drag.mode === 'resize'} setContentOverflow={handleContentOverflow} maxAvailableH={maxAvailableH} />
+                                                            <div className={`resize-handle ${b.type==='line'?'resize-handle-h':''}`} onMouseDown={e=>{e.stopPropagation(); startDrag(e, b.id, 'resize')}}></div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="absolute bottom-8 w-full left-0 text-center text-base font-medium text-black">{i+1} / {totalPages}</div>
                                         </div>
-                                        <div className="absolute bottom-8 w-full left-0 text-center text-base font-medium text-black">{i+1} / {totalPages}</div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1039,7 +1101,6 @@
                         </button>
 
                         <div className="overflow-y-auto flex-1 flex flex-col gap-4 pr-1">
-                            {/* STYLE CONTROLS */}
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
                                 <div className="text-xs font-bold text-gray-500 uppercase mb-2">Document Style</div>
                                 <select className="w-full p-2 rounded border border-gray-300 bg-white mb-3 text-sm" 
@@ -1060,7 +1121,6 @@
                                 </div>
                             </div>
 
-                            {/* WIDGETS */}
                             <div>
                                 <div className="text-xs font-bold text-gray-500 uppercase mb-2">Structure</div>
                                 <button className="tool-btn" onClick={()=>add('header')}><MatIcon name="title"/> Header</button>
@@ -1086,6 +1146,81 @@
                     </div>
                 </div>
             );
+        };
+
+        const HomeScreen = ({ onStart }) => {
+            const [showModal, setShowModal] = useState(false);
+            const [examName, setExamName] = useState('');
+
+            const handleCreate = () => {
+                if (examName.trim()) {
+                    onStart(examName);
+                } else {
+                    onStart("Untitled Exam");
+                }
+            };
+
+            return (
+                <div id="homeScreen">
+                    <div className="texture-layer"></div>
+                    <div id="bg-light-caster"></div>
+
+                    <div className="home-content">
+                        <span className="material-symbols-rounded home-icon">school</span>
+                        <h1 className="home-title">Wonderxam</h1>
+                        <p className="home-sub">Create, Edit & Export Exams</p>
+                        
+                        <button className="btn-home" onClick={() => setShowModal(true)}>
+                            <span className="material-symbols-rounded">add</span>
+                            New Exam
+                        </button>
+                    </div>
+
+                    <div className="inhouse-badge">
+                        <svg viewBox="0 0 100 60">
+                            <path d="M5 55 L50 10 L95 55" />
+                        </svg>
+                        <span>inhouse software</span>
+                    </div>
+
+                    {showModal && (
+                        <div className="modal-overlay">
+                            <div className="modal-card">
+                                <h2 className="modal-title">New Exam</h2>
+                                <div className="input-group">
+                                    <input 
+                                        type="text" 
+                                        className="mat-input" 
+                                        placeholder="Untitled Exam" 
+                                        autoFocus
+                                        value={examName}
+                                        onChange={(e) => setExamName(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
+                                    />
+                                    <span className="input-label">Exam Name</span>
+                                </div>
+                                <div className="modal-actions">
+                                    <button className="btn-text" onClick={() => setShowModal(false)}>Cancel</button>
+                                    <button className="btn-fill" onClick={handleCreate}>Create</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        function App() {
+            const [view, setView] = useState('home');
+            const [initialTitle, setInitialTitle] = useState("Untitled Exam");
+
+            if (view === 'home') {
+                return <HomeScreen onStart={(name) => {
+                    setInitialTitle(name);
+                    setView('editor');
+                }} />;
+            }
+            return <ExamEditor initialTitle={initialTitle} />;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
