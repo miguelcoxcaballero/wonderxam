@@ -164,15 +164,15 @@
             border: none; 
         }
 
-        /* Occupied/Ghost Styles */
-        .occupied-space {
+        /* Occupied/Ghost Styles - REDUNDANT AND CAUSES ARTIFACTS, REMOVING USAGE */
+        /* .occupied-space {
             position: absolute;
-            background-color: #e5e7eb; /* Gray */
+            background-color: #e5e7eb; 
             opacity: 0.5;
             border-radius: 12px;
             pointer-events: none;
             z-index: 1;
-        }
+        } */
         
         .snap-ghost {
             position: absolute;
@@ -487,6 +487,41 @@
         .exporting .hide-on-export { display: none !important; }     /* Hide the input fields */
         .exporting .no-export { display: none !important; }          /* Hide buttons/controls */
         
+        /* Force pure black text for export to ensure crisp PDF output */
+        .exporting {
+            color: #000000 !important;
+            --text: #000000 !important;
+        }
+        
+        /* AGGRESSIVE BLACK TEXT ENFORCEMENT */
+        .exporting * {
+            color: #000000 !important;
+            text-shadow: none !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+        }
+
+        .exporting input, 
+        .exporting textarea, 
+        .exporting .export-only,
+        .exporting .block-scale-content {
+            color: #000000 !important;
+        }
+
+        /* FIX FOR GREY BLOCKS: 
+           Force white background on the page and all blocks during export. 
+           Reset opacity and filters to ensure no transparency causes grey blend.
+        */
+        .exporting .a4-page,
+        .exporting .block-wrapper,
+        .exporting .block-scale-content {
+            background-color: #ffffff !important;
+            opacity: 1 !important;
+            filter: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
         /* Hide all UI overlays during export */
         .exporting .grid-layer, 
         .exporting .snap-ghost,
@@ -1297,9 +1332,17 @@
                 const pages = document.querySelectorAll('.a4-page');
                 
                 for(let i=0; i<pages.length; i++) {
-                    const cvs = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor:'#fff' });
+                    // Increased scale to 4 for high-resolution (approx 300dpi) capture.
+                    // This creates crisp black text instead of greyish anti-aliased text.
+                    const cvs = await html2canvas(pages[i], { 
+                        scale: 4, 
+                        useCORS: true, 
+                        backgroundColor:'#ffffff',
+                        logging: false
+                    });
+                    
                     if(i>0) pdf.addPage();
-                    pdf.addImage(cvs.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
+                    pdf.addImage(cvs.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
                 }
                 pdf.save(title + '.pdf');
                 setZoom(oldZoom);
@@ -1321,7 +1364,7 @@
                                             <div className="relative w-full h-full">
                                                 <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
                                                 
-                                                {/* Removed occupied-space loop to fix grey perimeter artifacts */}
+                                                {/* REMOVED .occupied-space RENDERING BLOCK HERE TO FIX GREY PERIMETER BUG */}
 
                                                 {drag.active && drag.mode === 'move' && (() => {
                                                     const start = drag.snapY; const end = drag.snapY + drag.origH;
