@@ -478,6 +478,32 @@
             border-radius: 50%; filter: blur(60px); transform: translate(-50%, -50%); pointer-events: none; z-index: 0;
         }
 
+        /* --- EXPORT & VISIBILITY UTILITIES --- */
+        /* By default, hide elements meant only for the exported PDF */
+        .export-only { display: none; }
+
+        /* When the app is in 'exporting' mode: */
+        .exporting .export-only { display: block !important; }       /* Show the clean text */
+        .exporting .hide-on-export { display: none !important; }     /* Hide the input fields */
+        .exporting .no-export { display: none !important; }          /* Hide buttons/controls */
+        
+        /* Hide all UI overlays during export */
+        .exporting .grid-layer, 
+        .exporting .snap-ghost,
+        .exporting .drag-handle, 
+        .exporting .delete-btn, 
+        .exporting .resize-handle { 
+            display: none !important; 
+        }
+        
+        /* Remove visual block boundaries for a clean paper look during export */
+        .exporting .block-wrapper,
+        .exporting .block-scale-content {
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
         /* --- NAMING MODAL --- */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000;
