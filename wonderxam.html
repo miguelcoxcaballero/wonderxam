@@ -164,16 +164,6 @@
             border: none; 
         }
 
-        /* Occupied/Ghost Styles - REDUNDANT AND CAUSES ARTIFACTS, REMOVING USAGE */
-        /* .occupied-space {
-            position: absolute;
-            background-color: #e5e7eb; 
-            opacity: 0.5;
-            border-radius: 12px;
-            pointer-events: none;
-            z-index: 1;
-        } */
-        
         .snap-ghost {
             position: absolute;
             background-color: rgba(139, 92, 246, 0.2); /* Purple tint */
@@ -213,8 +203,8 @@
 
         .block-wrapper { 
             position: absolute; 
-            background: transparent; /* Changed to transparent, inner content has white */
-            border: 1px solid transparent; /* Reverted to transparent as removing the grey box fixes the issue cleanly */
+            background: transparent;
+            border: 1px solid transparent;
             border-radius: 12px; 
             box-sizing: border-box; 
             display: flex; 
@@ -222,9 +212,8 @@
             z-index: 10; 
             opacity: 0;
             animation: blockFadeIn 0.35s ease-out forwards;
-            /* Added left, top, width, height to transition for smooth snapping */
             transition: box-shadow 0.2s, opacity 0.35s ease-out, transform 0.3s ease, left 0.25s cubic-bezier(0.2, 0, 0.2, 1), top 0.25s cubic-bezier(0.2, 0, 0.2, 1), width 0.2s ease-out, height 0.2s ease-out; 
-            touch-action: none; /* Crucial for mobile dragging */
+            touch-action: none;
         }
 
         /* Image Block Specifics - Square corners */
@@ -233,17 +222,15 @@
             border-radius: 0 !important;
         }
 
-        /* Inner container for the smooth scale animation */
         .block-scale-content {
             width: 100%;
             height: 100%;
             background: white;
             border-radius: 12px;
             position: relative;
-            /* The bouncy scale transition */
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, border-color 0.2s;
             transform-origin: center center;
-            border: 1px solid transparent; /* Reverted to transparent */
+            border: 1px solid transparent;
         }
 
         .block-wrapper:hover .block-scale-content { 
@@ -253,20 +240,18 @@
         }
         .block-wrapper:hover { z-index: 100; }
 
-        /* Dragging State */
         .block-wrapper.dragging { 
             z-index: 1000 !important; 
-            transition: top 0s, left 0s; /* Instant position update */
+            transition: top 0s, left 0s;
         }
 
         .block-wrapper.dragging .block-scale-content {
             box-shadow: 0 20px 40px rgba(124, 58, 237, 0.25) !important; 
             border-color: var(--primary) !important; 
             background: white;
-            transform: scale(1.05); /* The smooth zoom */
+            transform: scale(1.05);
         }
         
-        /* Dragging/Resizing Invalid State */
         .block-wrapper.invalid .block-scale-content, 
         .block-wrapper.dragging.invalid .block-scale-content {
             border-color: #ef4444 !important;
@@ -281,14 +266,12 @@
         }
         .block-wrapper.active { z-index: 200; }
         
-        /* Collision Highlight */
         .block-wrapper.collision-highlight .block-scale-content { 
             background-color: #fee2e2 !important; 
             border: 2px solid #fca5a5 !important; 
         }
         .block-wrapper.collision-highlight { z-index: 200 !important; }
 
-        /* Drag Handle */
         .drag-handle { 
             position: absolute; 
             left: -42px; 
@@ -306,12 +289,11 @@
             background: white; 
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            touch-action: none; /* Prevent scroll on mobile */
+            touch-action: none;
         }
         .block-wrapper:hover .drag-handle { opacity: 1; }
         .block-wrapper.dragging .drag-handle { cursor: grabbing; opacity: 1; }
 
-        /* Updated Delete Button - Bin inside rounded square */
         .delete-btn { 
             position: absolute; 
             right: -12px; 
@@ -341,7 +323,7 @@
         .block-wrapper:hover .delete-btn { opacity: 1; }
         
         .resize-handle { 
-            position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; /* Larger for touch */
+            position: absolute; bottom: 0; right: 0; width: 24px; height: 24px;
             cursor: nwse-resize; opacity: 0; z-index: 50; 
             touch-action: none;
         }
@@ -353,11 +335,10 @@
         .tool-btn:hover { background: #f3f4f6; }
         .tool-btn i { color: #5f6368; }
 
-        /* Updated Button Style - More Googlely */
         .btn-primary { 
             width: 100%; 
             padding: 12px 20px; 
-            border-radius: 12px; /* Less rounded (was 24px) */
+            border-radius: 12px;
             background: var(--primary); 
             color: white; 
             border: none; 
@@ -383,7 +364,6 @@
         
         .fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary); color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
         
-        /* INHOUSE BADGE STYLES */
         .inhouse-badge {
             display: flex;
             align-items: center;
@@ -400,7 +380,7 @@
             width: 24px;
             height: 14px;
             stroke-width: 6;
-            stroke: #d97736; /* Brand Copper */
+            stroke: #d97736;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
@@ -421,7 +401,6 @@
             animation: fadeIn 0.4s ease-out;
         }
         
-        /* Home screen exit animation */
         #homeScreen.exit-anim {
             animation: fadeOut 0.4s ease-out forwards;
             pointer-events: none;
@@ -431,7 +410,6 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; }}
         @keyframes heroEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Refined Googlely Menu Animation */
         @keyframes menuEnter {
             0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -479,21 +457,21 @@
         }
 
         /* --- EXPORT & VISIBILITY UTILITIES --- */
-        /* By default, hide elements meant only for the exported PDF */
-        .export-only { display: none; }
+        .export-only { 
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
 
-        /* When the app is in 'exporting' mode: */
-        .exporting .export-only { display: block !important; }       /* Show the clean text */
-        .exporting .hide-on-export { display: none !important; }     /* Hide the input fields */
-        .exporting .no-export { display: none !important; }          /* Hide buttons/controls */
+        .exporting .export-only { display: block !important; }
+        .exporting .hide-on-export { display: none !important; }
+        .exporting .no-export { display: none !important; }
         
-        /* Force pure black text for export to ensure crisp PDF output */
         .exporting {
             color: #000000 !important;
             --text: #000000 !important;
         }
         
-        /* AGGRESSIVE BLACK TEXT ENFORCEMENT */
         .exporting * {
             color: #000000 !important;
             text-shadow: none !important;
@@ -508,10 +486,6 @@
             color: #000000 !important;
         }
 
-        /* FIX FOR GREY BLOCKS: 
-           Force white background on the page and all blocks during export. 
-           Reset opacity and filters to ensure no transparency causes grey blend.
-        */
         .exporting .a4-page,
         .exporting .block-wrapper,
         .exporting .block-scale-content {
@@ -522,7 +496,30 @@
             border: none !important;
         }
 
-        /* Hide all UI overlays during export */
+        .exporting .block-wrapper,
+        .exporting .block-scale-content {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+        }
+
+        .exporting .block-scale-content,
+        .exporting .export-only {
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+        }
+        
+        /* Checkbox alignment */
+        .mcq-checkbox {
+            margin-top: 4px;
+        }
+
+        /* LOWER THE BOXES ONLY IN EXPORTED PDF */
+        .exporting .mcq-checkbox {
+            margin-top: 7px !important;   /* tweak for PDF vertical alignment */
+            border-color: #000 !important;
+        }
+
         .exporting .grid-layer, 
         .exporting .snap-ghost,
         .exporting .drag-handle, 
@@ -531,7 +528,6 @@
             display: none !important; 
         }
         
-        /* Remove visual block boundaries for a clean paper look during export */
         .exporting .block-wrapper,
         .exporting .block-scale-content {
             box-shadow: none !important;
@@ -650,7 +646,6 @@
             { label: 'Large', val: 125 }
         ];
 
-        // --- CUSTOM SELECT COMPONENT (GOOGLE STYLE) ---
         const CustomSelect = ({ label, value, options, onChange }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -666,7 +661,7 @@
                 if (!isOpen && triggerRef.current) {
                     const rect = triggerRef.current.getBoundingClientRect();
                     setCoords({
-                        top: rect.bottom, // Use viewport coordinates directly for fixed positioning
+                        top: rect.bottom,
                         left: rect.left,
                         width: rect.width
                     });
@@ -675,11 +670,10 @@
             };
 
             const selectedOption = options.find(o => o.val === value) || options[0];
-            const displayLabel = selectedOption.label || selectedOption.name; // Handle mixed data structure
+            const displayLabel = selectedOption.label || selectedOption.name;
 
             return (
                 <div className="relative mb-4" ref={triggerRef}>
-                    {/* Trigger Button */}
                     <div 
                         className={`relative bg-gray-50 border-b border-gray-300 rounded-t-md hover:bg-gray-100 transition-all cursor-pointer pt-5 pb-2 px-3 h-14 flex items-center group ${isOpen ? 'bg-gray-100 border-purple-500' : ''}`}
                         onClick={toggleOpen}
@@ -696,17 +690,13 @@
                         <div className={`absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
                             <MatIcon name="arrow_drop_down" />
                         </div>
-                        {/* Active Indicator Line */}
                         <div className={`absolute bottom-[-1px] left-0 h-[2px] bg-purple-600 transition-all duration-300 ${isOpen ? 'w-full' : 'w-0'}`}></div>
                     </div>
 
-                    {/* Portal Dropdown */}
                     {isOpen && ReactDOM.createPortal(
                         <>
-                            {/* Backdrop to close */}
                             <div className="fixed inset-0 z-[1999]" onClick={() => setIsOpen(false)}></div>
                             
-                            {/* Dropdown Menu */}
                             <div 
                                 className="fixed z-[2000] bg-white rounded-b-lg rounded-t-sm shadow-xl max-h-60 overflow-y-auto overflow-x-hidden animate-menu origin-top border border-gray-100"
                                 style={{ 
@@ -737,7 +727,6 @@
             );
         };
 
-        // --- NEW GRID COMPONENT FOR ANIMATED DOTS ---
         const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
             const points = useMemo(() => {
                 const pts = [];
@@ -789,8 +778,6 @@
             );
         });
 
-        // --- COMPONENTS ---
-
         const RichInput = ({ value, onChange, placeholder, minH="1.2em", image, onImg, contentRef, className="" }) => {
             const innerRef = useRef(null);
             const ref = contentRef || innerRef; 
@@ -802,6 +789,8 @@
                 }
             }, [value]);
 
+            const fileRef = useRef(null);
+
             return (
                 <div className="w-full flex flex-col group/input relative">
                     <div className="flex-1 flex items-start gap-2">
@@ -812,12 +801,22 @@
                             placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}
                             style={{minHeight: minH, lineHeight: '1.5em'}}
                         />
-                        <div className="export-only w-full whitespace-pre-wrap leading-normal" style={{minHeight: minH, lineHeight: '1.5em'}}>{value}</div>
+                        <div
+                            className="export-only w-full leading-normal"
+                            style={{
+                                minHeight: minH,
+                                lineHeight: '1.5em',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word'
+                            }}
+                        >
+                            {value}
+                        </div>
                         
                         {onImg && (
                             <div className="absolute right-0 top-0 opacity-0 group-hover/input:opacity-100 transition no-export z-10">
-                                <button onClick={()=>f.current.click()} className="p-1 bg-white rounded shadow hover:text-purple-600"><MatIcon name="image"/></button>
-                                <input type="file" ref={f} hidden accept="image/*" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>onImg(ev.target.result);r.readAsDataURL(e.target.files[0]);}}} />
+                                <button onClick={()=>fileRef.current.click()} className="p-1 bg-white rounded shadow hover:text-purple-600"><MatIcon name="image"/></button>
+                                <input type="file" ref={fileRef} hidden accept="image/*" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>onImg(ev.target.result);r.readAsDataURL(e.target.files[0]);}}} />
                             </div>
                         )}
                     </div>
@@ -898,11 +897,11 @@
                                 />
                             </div>
                         </div>
-                        <div className="pl-8 flex-1 flex flex-col gap-0">
+                        <div className="pl-8 flex-1 flex flex-col gap-2">
                             {b.data.opts.map((o,i)=>(
                                 <div key={i} className="flex items-start gap-2 group/opt">
-                                    <div className="w-4 h-4 border border-gray-400 bg-white mt-1 shrink-0"></div>
-                                    <span className="font-bold mt-0.5" style={{fontSize: '0.8em'}}>{String.fromCharCode(65+i)}.</span>
+                                    <div className="w-4 h-4 border border-gray-400 bg-white shrink-0 mcq-checkbox"></div>
+                                    <span className="font-bold mt-1" style={{fontSize: '0.8em'}}>{String.fromCharCode(65+i)}.</span>
                                     <div className="flex-1">
                                         <RichInput 
                                             value={o} 
@@ -960,7 +959,6 @@
             }
         };
 
-        // --- EXAM EDITOR COMPONENT ---
         const ExamEditor = ({ initialTitle }) => {
             const [blocks, setBlocks] = useState([]);
             const [docStyle, setDocStyle] = useState({ font: FONTS[0].val, size: 100 });
@@ -1129,7 +1127,6 @@
             const updateBlock = (id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b));
             const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id!==id));
 
-            // Helper to get consistent coordinates for Mouse and Touch
             const getPointerPos = (e) => {
                 if(e.touches && e.touches.length > 0) {
                     return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -1138,7 +1135,6 @@
             };
 
             const startDrag = (e, id, mode) => {
-                // Prevent default behavior (especially for touch to prevent scrolling)
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
 
@@ -1168,7 +1164,7 @@
             useEffect(() => {
                 const move = (e) => {
                     if(!drag.active) return;
-                    if (e.cancelable) e.preventDefault(); // Stop scrolling while dragging
+                    if (e.cancelable) e.preventDefault();
                     
                     const pos = getPointerPos(e);
                     
@@ -1220,7 +1216,6 @@
                     } else {
                         const b = blocks.find(x => x.id === drag.id);
                         
-                        // Define minimum requirements (logical constraints)
                         let reqMinW = 1;
                         let reqMinH = 1;
                         
@@ -1229,7 +1224,6 @@
                             reqMinH = 4;
                         }
 
-                        // Allow resizing down to 1x1 visually, even if it violates requirements
                         let nw = Math.max(1, Math.min(COLS - drag.origX, drag.origW + gridDx));
                         let nh = Math.max(1, drag.origH + gridDy);
                         
@@ -1252,7 +1246,6 @@
                             }
                         }
 
-                        // Check against specific block requirements for the RED highlighting
                         if (nw < reqMinW || nh < reqMinH) {
                             valid = false;
                         }
@@ -1274,20 +1267,16 @@
                                 updateBlock(drag.id, {x: drag.snapX, y: drag.snapY});
                             }
                         } else {
-                            // RESIZE LOGIC: Snap to minimums if dragging smaller than allowed
                             const b = blocks.find(x => x.id === drag.id);
                             let reqMinW = 1; let reqMinH = 1;
                             if (b.type === 'header') { reqMinW = 6; reqMinH = 4; }
 
-                            // Calculate what the size SHOULD be (clamped to minimums)
                             const finalW = Math.max(drag.resizeW, reqMinW);
                             const finalH = Math.max(drag.resizeH, reqMinH);
 
-                            // Check collision at this FINAL size (not the visually small dragged size)
                             const otherBlocks = blocks.filter(x => x.id !== drag.id);
                             let hasCollision = false;
                             
-                            // Re-check bounding box collision with clamped dimensions
                             for(let ob of otherBlocks) {
                                 const isOver = !(
                                     b.x + finalW <= ob.x || 
@@ -1298,7 +1287,6 @@
                                 if(isOver) { hasCollision = true; break; }
                             }
 
-                            // Only apply if the "snapped" size doesn't hit anything
                             if (!hasCollision) {
                                 updateBlock(drag.id, {w: finalW, h: finalH});
                             }
@@ -1332,8 +1320,6 @@
                 const pages = document.querySelectorAll('.a4-page');
                 
                 for(let i=0; i<pages.length; i++) {
-                    // Increased scale to 4 for high-resolution (approx 300dpi) capture.
-                    // This creates crisp black text instead of greyish anti-aliased text.
                     const cvs = await html2canvas(pages[i], { 
                         scale: 4, 
                         useCORS: true, 
@@ -1363,8 +1349,6 @@
                                         <div key={i} className="a4-page" style={{padding: `${MARGIN_Y}px ${MARGIN_X}px`}}>
                                             <div className="relative w-full h-full">
                                                 <GridLayer blocks={blocks} pageIndex={i} draggingBlockId={drag.active ? drag.id : null} />
-                                                
-                                                {/* REMOVED .occupied-space RENDERING BLOCK HERE TO FIX GREY PERIMETER BUG */}
 
                                                 {drag.active && drag.mode === 'move' && (() => {
                                                     const start = drag.snapY; const end = drag.snapY + drag.origH;
@@ -1395,12 +1379,11 @@
                                                             const startPixelY = (drag.origY - (i * ROWS)) * CELL; 
                                                             const startPixelX = drag.origX * CELL;
                                                             
-                                                            // Update position directly via left/top instead of transform to allow CSS transition to animate the snap on release
                                                             styleOverride = {
                                                                 left: startPixelX + (drag.deltaX / zoom),
                                                                 top: startPixelY + (drag.deltaY / zoom),
                                                                 zIndex: 999, 
-                                                                transition: 'none', // Disable transition during drag for 1:1 movement
+                                                                transition: 'none',
                                                                 opacity: 0.9 
                                                             };
                                                         } else if (drag.mode === 'resize') {
@@ -1424,7 +1407,6 @@
                                                                 ...styleOverride 
                                                             }}
                                                         >
-                                                            {/* Wrapper for smooth scaling */}
                                                             <div className="block-scale-content">
                                                                 <div className="drag-handle" onMouseDown={e=>startDrag(e, b.id, 'move')} onTouchStart={e=>startDrag(e, b.id, 'move')}>
                                                                     <MatIcon name="drag_indicator"/>
@@ -1464,7 +1446,6 @@
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
                                 <div className="text-xs font-bold text-gray-500 uppercase mb-3">Document Style</div>
                                 
-                                {/* GOOGLE STYLE FONT FAMILY SELECT */}
                                 <CustomSelect 
                                     label="Font Family"
                                     value={docStyle.font}
@@ -1472,7 +1453,6 @@
                                     onChange={v => setDocStyle({...docStyle, font: v})}
                                 />
 
-                                {/* GOOGLE STYLE FONT SIZE SELECT */}
                                 <CustomSelect 
                                     label="Font Size"
                                     value={docStyle.size}
@@ -1511,20 +1491,18 @@
         const HomeScreen = ({ onStart }) => {
             const [showModal, setShowModal] = useState(false);
             const [examName, setExamName] = useState('');
-            const [isExiting, setIsExiting] = useState(false); // New state for exit animation
+            const [isExiting, setIsExiting] = useState(false);
 
             const handleCreate = () => {
-                // Trigger exit animation
                 setIsExiting(true);
                 
-                // Wait for animation to finish before starting
                 setTimeout(() => {
                     if (examName.trim()) {
                         onStart(examName);
                     } else {
                         onStart("Untitled Exam");
                     }
-                }, 400); // 400ms matches the CSS animation duration
+                }, 400);
             };
 
             return (
