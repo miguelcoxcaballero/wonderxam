@@ -851,11 +851,13 @@
         .drive-card-icon {
             width: 40px;
             height: 40px;
-            color: rgba(0,0,0,0.4);
+            color: #000000;
+            opacity: 0.4;
         }
 
         .drive-card-icon.folder {
             color: #d97736;
+            opacity: 1;
         }
 
         .drive-card-title {
@@ -2918,7 +2920,7 @@
                 <div className="drive-card-title" title={file.name}>{stripWonderxamExtension(file.name)}</div>
                 <div className="drive-card-preview">
                     <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M6 2h8l4 4v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                        <path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
                         <path d="M14 2v4h4"/>
                     </svg>
                 </div>
@@ -3079,7 +3081,7 @@
                                 {drive.binFiles.map(file => (
                                     <div key={file.id} className="bin-item">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M6 2h8l4 4v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                                            <path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
                                             <path d="M14 2v4h4"/>
                                         </svg>
                                         <div style={{ flex: 1, minWidth: 0 }}>
