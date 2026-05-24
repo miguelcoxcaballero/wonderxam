@@ -3713,7 +3713,8 @@
                 savingRef.current = true;
                 setSaveStatus('Saving to Drive...');
                 try {
-                    const saved = await drive.saveExam(latestDocumentRef.current);
+                    const pdfBlob = await generateFullPDFBlob(latestDocumentRef.current);
+                    const saved = await drive.saveExam(latestDocumentRef.current, pdfBlob);
                     setCurrentDocument(prev => ({
                         ...prev,
                         driveFileId: saved.driveFileId,
@@ -3777,19 +3778,11 @@
                 if (saveTimerRef.current) {
                     clearTimeout(saveTimerRef.current);
                     saveTimerRef.current = null;
-                }
-                setSaveStatus('Saving high-fidelity preview...');
-                try {
-                    const pdfBlob = await generateFullPDFBlob(latestDocumentRef.current);
-                    await drive.saveExam(latestDocumentRef.current, pdfBlob);
-                    setSaveStatus('Saved to Drive');
-                } catch (err) {
-                    console.error('Failed to save high-fidelity PDF:', err);
-                    setSaveStatus('Failed to save final PDF');
+                    await persistCurrentDocument();
                 }
                 drive.refreshFiles();
                 setView('home');
-            }, [drive]);
+            }, [drive, persistCurrentDocument]);
 
             if (!drive.signedIn) {
                 return <WelcomeScreen ready={drive.ready} status={drive.status} onSignIn={drive.signIn} />;
