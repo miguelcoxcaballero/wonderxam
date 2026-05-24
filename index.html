@@ -873,22 +873,16 @@
             border: none;
             border-radius: 8px;
             background: transparent;
-            color: #555555;
+            color: #888;
             display: grid;
             place-items: center;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.15s, background 0.15s;
-        }
-
-        .drive-card:hover .drive-card-more,
-        .drive-folder-card:hover .drive-card-more,
-        .drive-card-more:focus {
-            opacity: 1;
+            transition: color 0.15s, background 0.15s;
         }
 
         .drive-card-more:hover {
-            background: rgba(0,0,0,0.08);
+            color: #1a1a1a;
+            background: rgba(0,0,0,0.06);
         }
 
         .drive-card-dropdown {
@@ -2892,7 +2886,6 @@
                 onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); onDragStart?.(file); }}
                 onDragEnd={() => onDragStart?.(null)}
             >
-                <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
                 <div className="drive-card-preview">
                     <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -2900,6 +2893,10 @@
                         <line x1="8" y1="13" x2="16" y2="13"/>
                         <line x1="8" y1="17" x2="13" y2="17"/>
                     </svg>
+                </div>
+                <div>
+                    <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
+                    <div className="drive-card-meta">{formatDriveDate(file.modifiedTime) || 'Wonderxam exam'}</div>
                 </div>
                 <DriveItemMenu item={file} type="file" onDelete={onDelete} onMove={onMove} />
             </div>
