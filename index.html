@@ -1332,6 +1332,7 @@
             const tokenClientRef = useRef(null);
             const tokenRef = useRef({ accessToken: null, expiry: 0 });
             const folderIdRef = useRef(null);
+            const ensureFolderPromiseRef = useRef(null);
             const folderStackRef = useRef([]);
 
             const updateFolderStack = useCallback((nextStack) => {
@@ -1446,24 +1447,38 @@
 
             const ensureDriveFolder = useCallback(async () => {
                 if (folderIdRef.current) return folderIdRef.current;
-                const query = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-                const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&pageSize=1`);
-                const data = await res.json();
-                if (data.files?.[0]?.id) {
-                    folderIdRef.current = data.files[0].id;
+                if (ensureFolderPromiseRef.current) return ensureFolderPromiseRef.current;
+
+                ensureFolderPromiseRef.current = (async () => {
+                    const query = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+                    const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=createdTime asc&fields=files(id,name,createdTime)&pageSize=10`);
+                    const data = await res.json();
+                    if (data.files?.[0]?.id) {
+                        folderIdRef.current = data.files[0].id;
+                        if (data.files.length > 1) {
+                            console.warn(`Found ${data.files.length} Wonderxam Drive folders. Using the oldest one and not creating a new folder.`);
+                        }
+                        return folderIdRef.current;
+                    }
+                    const createRes = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: DRIVE_FOLDER_NAME,
+                            mimeType: 'application/vnd.google-apps.folder',
+                            appProperties: { wonderxamRoot: '1' }
+                        })
+                    });
+                    const created = await createRes.json();
+                    folderIdRef.current = created.id;
                     return folderIdRef.current;
+                })();
+
+                try {
+                    return await ensureFolderPromiseRef.current;
+                } finally {
+                    ensureFolderPromiseRef.current = null;
                 }
-                const createRes = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: DRIVE_FOLDER_NAME,
-                        mimeType: 'application/vnd.google-apps.folder'
-                    })
-                });
-                const created = await createRes.json();
-                folderIdRef.current = created.id;
-                return folderIdRef.current;
             }, [driveFetch]);
 
             const refreshFiles = useCallback(async (search = '', folderIdOverride = null) => {
@@ -1514,8 +1529,7 @@
                 setStatus('Waiting for Google sign-in...');
                 await requestToken(true);
                 await loadProfile();
-                await refreshFiles();
-            }, [loadProfile, refreshFiles, requestToken]);
+            }, [loadProfile, requestToken]);
 
             const signOut = useCallback(() => {
                 const token = tokenRef.current.accessToken;
@@ -1524,6 +1538,7 @@
                 }
                 tokenRef.current = { accessToken: null, expiry: 0 };
                 folderIdRef.current = null;
+                ensureFolderPromiseRef.current = null;
                 folderStackRef.current = [];
                 setSignedIn(false);
                 setProfile(null);
