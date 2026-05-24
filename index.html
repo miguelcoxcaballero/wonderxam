@@ -2841,17 +2841,20 @@
                             setColorsOpen(false);
                         }}
                     >
-                        <MatIcon name="more_vert" className="text-[18px]" />
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
                     </button>
                     {open && (
                         <div className="drive-card-dropdown">
-                            <button type="button" onClick={() => { setOpen(false); setColorsOpen(false); onMove(item, type); }}>
-                                <MatIcon name="drive_file_move" className="text-[18px]" />
-                                <span>Move</span>
-                            </button>
                             {isFolder && (
                                 <button type="button" onClick={() => setColorsOpen(v => !v)}>
-                                    <MatIcon name="palette" className="text-[18px]" />
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <circle cx="12" cy="12" r="3.5" fill="currentColor" opacity="0.3"/>
+                                    </svg>
                                     <span>Change color</span>
                                 </button>
                             )}
@@ -2874,6 +2877,12 @@
                                     ))}
                                 </div>
                             )}
+                            <button type="button" onClick={() => { setOpen(false); setColorsOpen(false); onMove(item, type); }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                </svg>
+                                <span>Move</span>
+                            </button>
                             <button
                                 className="danger"
                                 type="button"
@@ -2883,7 +2892,10 @@
                                     onDelete(item, type);
                                 }}
                             >
-                                <MatIcon name="delete" className="text-[18px]" />
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
                                 <span>Move to bin</span>
                             </button>
                         </div>
@@ -3178,7 +3190,10 @@
                                 aria-label="Bin"
                                 onClick={() => { drive.fetchBin(); setShowBin(true); }}
                             >
-                                <MatIcon name="delete" />
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
                             </button>
                             <input
                                 className="drive-search"
@@ -3190,19 +3205,6 @@
                             />
                             <div className="drive-status">{drive.status}</div>
                         </div>
-
-                        {drive.folderStack.length > 0 && (
-                            <div className="drive-breadcrumbs">
-                                {drive.folderStack.map((folder, index) => (
-                                    <React.Fragment key={folder.id}>
-                                        {index > 0 && <span>/</span>}
-                                        <button className="drive-breadcrumb" type="button" onClick={() => drive.navigateFolder(index, search)}>
-                                            {folder.name}
-                                        </button>
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        )}
 
                         <section className="drive-section">
                             <div className="drive-section-header">
@@ -3229,7 +3231,36 @@
                         <section className="drive-section">
                             <div className="drive-section-header">
                                 <div className="drive-section-title">My Drive</div>
+                                {drive.folderStack.length > 1 && (
+                                    <button
+                                        className="drive-btn drive-btn-secondary drive-icon-btn"
+                                        type="button"
+                                        title="Up one folder"
+                                        aria-label="Up one folder"
+                                        onClick={() => drive.navigateFolder(drive.folderStack.length - 2, search)}
+                                    >
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="15 18 9 12 15 6"/>
+                                        </svg>
+                                    </button>
+                                )}
                             </div>
+                            {drive.folderStack.length > 0 && (
+                                <div className="drive-breadcrumbs">
+                                    {drive.folderStack.map((folder, index) => (
+                                        <React.Fragment key={folder.id}>
+                                            {index > 0 && <span>/</span>}
+                                            <button
+                                                className={`drive-breadcrumb${index === drive.folderStack.length - 1 ? ' active' : ''}`}
+                                                type="button"
+                                                onClick={() => index < drive.folderStack.length - 1 && drive.navigateFolder(index, search)}
+                                            >
+                                                {index === 0 ? `${folder.name}/` : folder.name}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            )}
                             {(drive.folders.length === 0 && filteredFiles.length === 0) ? (
                                 <div className="drive-empty">{drive.loading ? 'Loading...' : 'No folders or exams here yet.'}</div>
                             ) : (
