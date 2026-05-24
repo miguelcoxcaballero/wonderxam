@@ -774,6 +774,19 @@
             box-shadow: 0 4px 30px rgba(0,0,0,0.12);
         }
 
+        .drive-card.drag-over {
+            box-shadow: 0 0 0 3px #7c3aed, 0 4px 30px rgba(124,58,237,0.2);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .drive-card[draggable="true"] {
+            cursor: grab;
+        }
+
+        .drive-card[draggable="true"]:active {
+            cursor: grabbing;
+        }
+
         .drive-card-preview {
             height: 104px;
             border-radius: 12px;
@@ -1882,6 +1895,18 @@
                 await refreshFiles();
             }, [driveFetch, fetchBin, refreshFiles]);
 
+            const moveItem = useCallback(async (item, targetFolderId) => {
+                if (!item?.id || !targetFolderId) return;
+                const currentParents = Array.isArray(item.parents) ? item.parents.join(',') : '';
+                const qs = new URLSearchParams({ addParents: targetFolderId });
+                if (currentParents) qs.set('removeParents', currentParents);
+                await driveFetch(
+                    `https://www.googleapis.com/drive/v3/files/${item.id}?${qs.toString()}&fields=${encodeURIComponent(DRIVE_FIELDS)}`,
+                    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }
+                );
+                await refreshFiles();
+            }, [driveFetch, refreshFiles]);
+
             useEffect(() => {
                 if (ready && signedIn) {
                     refreshFiles();
@@ -1911,7 +1936,8 @@
                 binFiles,
                 binLoading,
                 fetchBin,
-                restoreItem
+                restoreItem,
+                moveItem
             };
         };
 
@@ -2716,10 +2742,23 @@
             );
         };
 
-        const DriveItemMenu = ({ item, type, onDelete, onColor }) => {
+        const DriveItemMenu = ({ item, type, onDelete, onColor, onMove }) => {
             const [open, setOpen] = useState(false);
             const [colorsOpen, setColorsOpen] = useState(false);
             const isFolder = type === 'folder';
+            const menuRef = useRef(null);
+
+            useEffect(() => {
+                if (!open) return;
+                const handler = (e) => {
+                    if (menuRef.current && !menuRef.current.contains(e.target)) {
+                        setOpen(false);
+                        setColorsOpen(false);
+                    }
+                };
+                document.addEventListener('pointerdown', handler, true);
+                return () => document.removeEventListener('pointerdown', handler, true);
+            }, [open]);
 
             const stop = (event) => {
                 event.preventDefault();
@@ -2727,7 +2766,7 @@
             };
 
             return (
-                <div className="drive-card-menu" onClick={stop} onPointerDown={stop} onKeyDown={(event) => event.stopPropagation()}>
+                <div ref={menuRef} className="drive-card-menu" onClick={stop} onPointerDown={stop} onKeyDown={(event) => event.stopPropagation()}>
                     <button
                         className="drive-card-more"
                         type="button"
@@ -2744,6 +2783,10 @@
                     </button>
                     {open && (
                         <div className="drive-card-dropdown">
+                            <button type="button" onClick={() => { setOpen(false); setColorsOpen(false); onMove(item, type); }}>
+                                <MatIcon name="drive_file_move" className="text-[18px]" />
+                                <span>Move</span>
+                            </button>
                             {isFolder && (
                                 <button type="button" onClick={() => setColorsOpen(v => !v)}>
                                     <MatIcon name="palette" className="text-[18px]" />
@@ -2787,8 +2830,17 @@
             );
         };
 
-        const DriveCard = ({ file, onOpen, onDelete }) => (
-            <div className="drive-card" role="button" tabIndex={0} onClick={() => onOpen(file)} onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}>
+        const DriveCard = ({ file, onOpen, onDelete, onMove, onDragStart }) => (
+            <div
+                className="drive-card"
+                role="button"
+                tabIndex={0}
+                draggable
+                onClick={() => onOpen(file)}
+                onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}
+                onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); onDragStart?.(file); }}
+                onDragEnd={() => onDragStart?.(null)}
+            >
                 <div className="drive-card-preview">
                     <MatIcon name="description" className="text-[42px]" />
                 </div>
@@ -2796,22 +2848,37 @@
                     <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
                     <div className="drive-card-meta">{formatDriveDate(file.modifiedTime) || 'Wonderxam exam'}</div>
                 </div>
-                <DriveItemMenu item={file} type="file" onDelete={onDelete} />
+                <DriveItemMenu item={file} type="file" onDelete={onDelete} onMove={onMove} />
             </div>
         );
 
-        const FolderCard = ({ folder, onOpen, onDelete, onColor }) => (
-            <div className="drive-card folder" role="button" tabIndex={0} onClick={() => onOpen(folder)} onKeyDown={(e) => e.key === 'Enter' && onOpen(folder)}>
-                <div className="drive-card-preview" style={folder.folderColorRgb ? { background: folder.folderColorRgb, color: '#ffffff' } : undefined}>
-                    <MatIcon name="folder" className="text-[46px]" />
+        const FolderCard = ({ folder, onOpen, onDelete, onColor, onMove, onDragStart, onDropItem }) => {
+            const [isDragOver, setIsDragOver] = useState(false);
+            return (
+                <div
+                    className={`drive-card folder${isDragOver ? ' drag-over' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    draggable
+                    onClick={() => onOpen(folder)}
+                    onKeyDown={(e) => e.key === 'Enter' && onOpen(folder)}
+                    onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); onDragStart?.(folder); }}
+                    onDragEnd={() => onDragStart?.(null)}
+                    onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true); }}
+                    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsDragOver(false); }}
+                    onDrop={(e) => { e.preventDefault(); setIsDragOver(false); onDropItem?.(folder); }}
+                >
+                    <div className="drive-card-preview" style={folder.folderColorRgb ? { background: folder.folderColorRgb, color: '#ffffff' } : undefined}>
+                        <MatIcon name="folder" className="text-[46px]" />
+                    </div>
+                    <div>
+                        <div className="drive-card-title">{folder.name || 'Folder'}</div>
+                        <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime) || 'Folder'}</div>
+                    </div>
+                    <DriveItemMenu item={folder} type="folder" onDelete={onDelete} onColor={onColor} onMove={onMove} />
                 </div>
-                <div>
-                    <div className="drive-card-title">{folder.name || 'Folder'}</div>
-                    <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime) || 'Folder'}</div>
-                </div>
-                <DriveItemMenu item={folder} type="folder" onDelete={onDelete} onColor={onColor} />
-            </div>
-        );
+            );
+        };
 
         const WelcomeScreen = ({ ready, status, onSignIn }) => (
             <div id="welcome-view">
@@ -2825,6 +2892,89 @@
                 <div className="drive-status text-center">{status}</div>
             </div>
         );
+
+        const FolderPickerModal = ({ drive, item, onClose }) => {
+            const [stack, setStack] = useState([{ id: drive.folderStack[0]?.id, name: 'Wonderxam' }]);
+            const [folders, setFolders] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            const currentFolderId = stack.at(-1)?.id;
+
+            useEffect(() => {
+                if (!currentFolderId) return;
+                setLoading(true);
+                setFolders([]);
+                const q = encodeURIComponent(`'${currentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+                const fields = encodeURIComponent('files(id,name,modifiedTime,folderColorRgb)');
+                drive.fetchBin; // just to access driveFetch via drive object indirectly
+                // We reuse drive's internal fetch by calling refreshFiles for the folder, but simpler: we expose a fetchFolders helper
+                // Since we don't have direct driveFetch access, use drive.moveItem as a proxy — instead, let's keep it simple:
+                // fetch via the browser fetch with the stored token
+                const token = (() => {
+                    try { const r = localStorage.getItem('drive-token-v1'); return r ? JSON.parse(r)?.token : null; } catch { return null; }
+                })();
+                if (!token) { setLoading(false); return; }
+                fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=${fields}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                    .then(r => r.json())
+                    .then(data => { setFolders(data.files || []); })
+                    .catch(() => {})
+                    .finally(() => setLoading(false));
+            }, [currentFolderId]);
+
+            const handleMove = async (targetFolder) => {
+                await drive.moveItem(item, targetFolder.id);
+                onClose();
+            };
+
+            const handleMoveHere = async () => {
+                await drive.moveItem(item, currentFolderId);
+                onClose();
+            };
+
+            return (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+                    <div className="modal-card" style={{ maxWidth: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <h2 className="modal-title">Move "{item.name ? stripWonderxamExtension(item.name) : item.name || 'item'}"</h2>
+
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, fontSize: '0.85rem', color: '#6b7280' }}>
+                            {stack.map((crumb, i) => (
+                                <React.Fragment key={crumb.id}>
+                                    {i > 0 && <span>/</span>}
+                                    <button
+                                        type="button"
+                                        style={{ background: 'none', border: 'none', cursor: i < stack.length - 1 ? 'pointer' : 'default', color: i < stack.length - 1 ? '#7c3aed' : '#1a1a1a', fontWeight: i === stack.length - 1 ? 700 : 400, padding: '2px 4px', borderRadius: 6 }}
+                                        onClick={() => i < stack.length - 1 && setStack(stack.slice(0, i + 1))}
+                                    >{crumb.name}</button>
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 80 }}>
+                            {loading && <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading...</div>}
+                            {!loading && folders.length === 0 && <div style={{ color: '#9ca3af', fontSize: '0.875rem' }}>No subfolders here.</div>}
+                            {folders.filter(f => f.id !== item.id).map(folder => (
+                                <div key={folder.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: '#f9fafb', cursor: 'pointer', transition: '0.15s' }}
+                                    onClick={() => setStack([...stack, { id: folder.id, name: folder.name }])}
+                                    onMouseOver={e => e.currentTarget.style.background = '#f3f4f6'}
+                                    onMouseOut={e => e.currentTarget.style.background = '#f9fafb'}
+                                >
+                                    <MatIcon name="folder" style={{ color: folder.folderColorRgb || '#d97736', fontSize: 20 }} />
+                                    <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: 500 }}>{folder.name}</span>
+                                    <MatIcon name="chevron_right" style={{ color: '#9ca3af', fontSize: 18 }} />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
+                            <button className="btn-text" onClick={onClose}>Cancel</button>
+                            <button className="btn-fill" onClick={handleMoveHere}>Move here</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const BinModal = ({ drive, onClose }) => {
             const [activeBinMenu, setActiveBinMenu] = useState(null);
@@ -2911,6 +3061,8 @@
             const [fabOpen, setFabOpen] = useState(false);
             const [confirmTarget, setConfirmTarget] = useState(null);
             const [showBin, setShowBin] = useState(false);
+            const [moveTarget, setMoveTarget] = useState(null);
+            const draggedItemRef = useRef(null);
 
             const handleCreate = () => {
                 const name = examName.trim();
@@ -2998,7 +3150,16 @@
                             </div>
                             {recentFiles.length ? (
                                 <div className="drive-recents">
-                                    {recentFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} onDelete={requestDelete} />)}
+                                    {recentFiles.map(file => (
+                                        <DriveCard
+                                            key={file.id}
+                                            file={file}
+                                            onOpen={onOpen}
+                                            onDelete={requestDelete}
+                                            onMove={(item) => setMoveTarget(item)}
+                                            onDragStart={(item) => { draggedItemRef.current = item; }}
+                                        />
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="drive-empty">{drive.loading ? 'Loading exams...' : 'No recent exams yet.'}</div>
@@ -3018,9 +3179,27 @@
                                             onOpen={(folder) => drive.enterFolder(folder, search)}
                                             onDelete={requestDelete}
                                             onColor={updateColor}
+                                            onMove={(item) => setMoveTarget(item)}
+                                            onDragStart={(item) => { draggedItemRef.current = item; }}
+                                            onDropItem={(targetFolder) => {
+                                                const dragged = draggedItemRef.current;
+                                                if (dragged && dragged.id !== targetFolder.id) {
+                                                    drive.moveItem(dragged, targetFolder.id);
+                                                }
+                                                draggedItemRef.current = null;
+                                            }}
                                         />
                                     ))}
-                                    {filteredFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} onDelete={requestDelete} />)}
+                                    {filteredFiles.map(file => (
+                                        <DriveCard
+                                            key={file.id}
+                                            file={file}
+                                            onOpen={onOpen}
+                                            onDelete={requestDelete}
+                                            onMove={(item) => setMoveTarget(item)}
+                                            onDragStart={(item) => { draggedItemRef.current = item; }}
+                                        />
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="drive-empty">{drive.loading ? 'Loading items...' : 'No folders or Wonderxam exams found here.'}</div>
@@ -3087,6 +3266,10 @@
 
                     {showBin && (
                         <BinModal drive={drive} onClose={() => setShowBin(false)} />
+                    )}
+
+                    {moveTarget && (
+                        <FolderPickerModal drive={drive} item={moveTarget} onClose={() => setMoveTarget(null)} />
                     )}
                 </div>
             );
