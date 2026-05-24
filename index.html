@@ -2823,23 +2823,28 @@
                 setZoom(1);
                 await new Promise(r => setTimeout(r, 500)); 
 
-                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-                const pages = document.querySelectorAll('.a4-page');
-                
-                for(let i=0; i<pages.length; i++) {
-                    const cvs = await html2canvas(pages[i], { 
-                        scale: 4, 
-                        useCORS: true, 
-                        backgroundColor:'#ffffff',
-                        logging: false
-                    });
-                    
-                    if(i>0) pdf.addPage();
-                    pdf.addImage(cvs.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+                try {
+                    const activeDoc = {
+                        ...initialDocument,
+                        title,
+                        blocks,
+                        docStyle
+                    };
+                    const blob = await generateFullPDFBlob(activeDoc);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${sanitizeFilename(title)}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error('Failed to export PDF:', err);
+                } finally {
+                    setZoom(oldZoom);
+                    setExporting(false);
                 }
-                pdf.save(title + '.pdf');
-                setZoom(oldZoom);
-                setExporting(false);
             };
 
             return (
