@@ -484,9 +484,10 @@
             gap: 24px;
         }
 
-        .welcome-logo svg {
-            width: 180px;
-            height: 108px;
+        .welcome-logo .mat-icon {
+            font-size: 92px;
+            color: #7c3aed;
+            line-height: 1;
         }
 
         .welcome-logo .brand-name {
@@ -524,9 +525,11 @@
             min-width: 0;
         }
 
-        .drive-brand svg {
+        .drive-brand .mat-icon {
             width: 32px;
-            height: 24px;
+            height: 32px;
+            font-size: 32px;
+            color: #7c3aed;
             flex: 0 0 auto;
         }
 
@@ -778,6 +781,11 @@
             color: #7c3aed;
         }
 
+        .drive-card.folder .drive-card-preview {
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #d97736;
+        }
+
         .drive-card-title {
             font-weight: 700;
             overflow: hidden;
@@ -802,12 +810,128 @@
             color: #6b7280;
             font-size: 12px;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .drive-save-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #9ca3af;
+            box-shadow: 0 0 0 3px rgba(156,163,175,0.15);
+        }
+
+        .drive-save-dot.saving {
+            background: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
+        }
+
+        .drive-save-dot.saved {
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+        }
+
+        .drive-save-dot.error {
+            background: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.18);
+        }
+
+        .drive-fab-wrap {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1300;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .drive-fab {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            border: none;
+            background: #1a1a1a;
+            color: white;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.16s, box-shadow 0.16s;
+        }
+
+        .drive-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+        }
+
+        .drive-fab .mat-icon {
+            font-size: 32px;
+        }
+
+        .drive-fab-menu {
+            width: 190px;
+            padding: 8px;
+            border-radius: 16px;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.14);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .drive-fab-menu button {
+            width: 100%;
+            min-height: 42px;
+            padding: 0 10px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .drive-fab-menu button:hover {
+            background: rgba(0,0,0,0.06);
+        }
+
+        .drive-breadcrumbs {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            color: #666666;
+            font-size: 0.86rem;
+        }
+
+        .drive-breadcrumb {
+            border: none;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+
+        .drive-breadcrumb:hover {
+            background: rgba(0,0,0,0.06);
         }
 
         @media (max-width: 720px) {
             .drive-topbar { padding: 10px 12px; }
             .drive-brand { gap: 6px; flex: 1 1 auto; }
-            .drive-brand svg { width: 28px; height: 20px; }
+            .drive-brand .mat-icon { width: 28px; height: 28px; font-size: 28px; }
             .drive-actions { gap: 6px; }
             .drive-btn { min-height: 36px; padding: 8px 10px; font-size: 0.82rem; }
             .drive-icon-btn { width: 36px; height: 36px; }
@@ -816,6 +940,8 @@
             .drive-recents .drive-card { min-width: 156px; flex-basis: 156px; }
             .drive-card { min-height: 156px; }
             .drive-card-preview { height: 88px; }
+            .drive-fab-wrap { right: 16px; bottom: 16px; }
+            .drive-fab { width: 52px; height: 52px; border-radius: 14px; }
         }
         
         /* --- EXPORT & VISIBILITY UTILITIES --- */
@@ -1080,6 +1206,7 @@
             docStyle: { font: FONTS[0].val, size: 100 },
             driveFileId: null,
             driveFileName: null,
+            driveFolderId: null,
             modifiedTime: null
         });
 
@@ -1100,6 +1227,7 @@
                 docStyle: data?.docStyle || { font: FONTS[0].val, size: 100 },
                 driveFileId: file?.id || null,
                 driveFileName: file?.name || null,
+                driveFolderId: file?.parents?.[0] || null,
                 modifiedTime: file?.modifiedTime || data?.savedAt || null
             };
         };
@@ -1197,11 +1325,19 @@
             const [signedIn, setSignedIn] = useState(false);
             const [profile, setProfile] = useState(null);
             const [files, setFiles] = useState([]);
+            const [folders, setFolders] = useState([]);
+            const [folderStack, setFolderStack] = useState([]);
             const [loading, setLoading] = useState(false);
             const [status, setStatus] = useState('Sign in to browse your Drive.');
             const tokenClientRef = useRef(null);
             const tokenRef = useRef({ accessToken: null, expiry: 0 });
             const folderIdRef = useRef(null);
+            const folderStackRef = useRef([]);
+
+            const updateFolderStack = useCallback((nextStack) => {
+                folderStackRef.current = nextStack;
+                setFolderStack(nextStack);
+            }, []);
 
             const saveToken = useCallback((accessToken, expiry) => {
                 tokenRef.current = { accessToken, expiry };
@@ -1330,35 +1466,49 @@
                 return folderIdRef.current;
             }, [driveFetch]);
 
-            const refreshFiles = useCallback(async (search = '') => {
+            const refreshFiles = useCallback(async (search = '', folderIdOverride = null) => {
                 if (!tokenRef.current.accessToken) return;
                 setLoading(true);
                 setStatus('Loading your Drive...');
                 try {
                     await loadProfile();
-                    const folderId = await ensureDriveFolder();
-                    const queryParts = [
-                        `'${folderId}' in parents`,
+                    const rootFolderId = await ensureDriveFolder();
+                    if (!folderStackRef.current.length) {
+                        updateFolderStack([{ id: rootFolderId, name: DRIVE_FOLDER_NAME }]);
+                    }
+                    const activeFolderId = folderIdOverride || folderStackRef.current.at(-1)?.id || rootFolderId;
+                    const baseParts = [
+                        `'${activeFolderId}' in parents`,
                         'trashed=false',
-                        `mimeType='${DRIVE_FILE_MIME}'`
                     ];
                     if (search.trim()) {
-                        queryParts.push(`name contains '${search.trim().replace(/'/g, "\\'")}'`);
+                        baseParts.push(`name contains '${search.trim().replace(/'/g, "\\'")}'`);
                     }
-                    const q = encodeURIComponent(queryParts.join(' and '));
-                    const fields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
-                    const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=${fields}`);
-                    const data = await res.json();
-                    const wonderxamFiles = (data.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
+                    const folderQuery = encodeURIComponent([...baseParts, `mimeType='application/vnd.google-apps.folder'`].join(' and '));
+                    const fileQuery = encodeURIComponent([...baseParts, `mimeType='${DRIVE_FILE_MIME}'`].join(' and '));
+                    const folderFields = encodeURIComponent('files(id,name,mimeType,modifiedTime,createdTime,parents)');
+                    const fileFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
+                    const [folderRes, fileRes] = await Promise.all([
+                        driveFetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&orderBy=name&pageSize=100&fields=${folderFields}`),
+                        driveFetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&orderBy=modifiedTime desc&pageSize=50&fields=${fileFields}`)
+                    ]);
+                    const folderData = await folderRes.json();
+                    const fileData = await fileRes.json();
+                    const nextFolders = folderData.files || [];
+                    const wonderxamFiles = (fileData.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
+                    setFolders(nextFolders);
                     setFiles(wonderxamFiles);
-                    setStatus(wonderxamFiles.length ? `${wonderxamFiles.length} exam${wonderxamFiles.length === 1 ? '' : 's'} in Drive.` : 'No Wonderxam exams in Drive yet.');
+                    const totalItems = nextFolders.length + wonderxamFiles.length;
+                    setStatus(totalItems
+                        ? `${nextFolders.length} folder${nextFolders.length === 1 ? '' : 's'} and ${wonderxamFiles.length} exam${wonderxamFiles.length === 1 ? '' : 's'}.`
+                        : 'No folders or Wonderxam exams here yet.');
                 } catch (err) {
                     console.error(err);
                     setStatus('Unable to load Drive files.');
                 } finally {
                     setLoading(false);
                 }
-            }, [driveFetch, ensureDriveFolder, loadProfile]);
+            }, [driveFetch, ensureDriveFolder, loadProfile, updateFolderStack]);
 
             const signIn = useCallback(async () => {
                 setStatus('Waiting for Google sign-in...');
@@ -1374,9 +1524,12 @@
                 }
                 tokenRef.current = { accessToken: null, expiry: 0 };
                 folderIdRef.current = null;
+                folderStackRef.current = [];
                 setSignedIn(false);
                 setProfile(null);
                 setFiles([]);
+                setFolders([]);
+                setFolderStack([]);
                 setStatus('Sign in to browse your Drive.');
                 try {
                     localStorage.removeItem(DRIVE_TOKEN_KEY);
@@ -1394,9 +1547,41 @@
                 return parseExamDocument(payload, file);
             }, [driveFetch]);
 
+            const enterFolder = useCallback((folder, search = '') => {
+                if (!folder?.id) return;
+                const nextStack = [...folderStackRef.current, { id: folder.id, name: folder.name || 'Folder' }];
+                updateFolderStack(nextStack);
+                refreshFiles(search, folder.id);
+            }, [refreshFiles, updateFolderStack]);
+
+            const navigateFolder = useCallback((index, search = '') => {
+                const nextStack = folderStackRef.current.slice(0, index + 1);
+                if (!nextStack.length) return;
+                updateFolderStack(nextStack);
+                refreshFiles(search, nextStack.at(-1).id);
+            }, [refreshFiles, updateFolderStack]);
+
+            const createFolder = useCallback(async (name, search = '') => {
+                await requestToken(false);
+                const rootFolderId = await ensureDriveFolder();
+                const activeFolderId = folderStackRef.current.at(-1)?.id || rootFolderId;
+                const safeName = sanitizeFilename(name || 'New Folder');
+                await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,modifiedTime,parents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: safeName,
+                        mimeType: 'application/vnd.google-apps.folder',
+                        parents: [activeFolderId]
+                    })
+                });
+                await refreshFiles(search, activeFolderId);
+            }, [driveFetch, ensureDriveFolder, refreshFiles, requestToken]);
+
             const saveExam = useCallback(async (doc) => {
                 await requestToken(false);
-                const folderId = await ensureDriveFolder();
+                const rootFolderId = await ensureDriveFolder();
+                const activeFolderId = doc.driveFolderId || folderStackRef.current.at(-1)?.id || rootFolderId;
                 const title = sanitizeFilename(doc.title || DEFAULT_TITLE);
                 const fileName = `${title}${DRIVE_FILE_EXTENSION}`;
                 const content = serializeExamDocument(doc);
@@ -1404,7 +1589,7 @@
                     name: fileName,
                     mimeType: DRIVE_FILE_MIME,
                     appProperties: { wonderxam: 'exam' },
-                    parents: doc.driveFileId ? undefined : [folderId]
+                    parents: doc.driveFileId ? undefined : [activeFolderId]
                 };
                 const body = buildDriveMultipartBody(metadata, content);
                 const url = doc.driveFileId
@@ -1419,6 +1604,7 @@
                     ...doc,
                     driveFileId: saved.id || doc.driveFileId,
                     driveFileName: saved.name || fileName,
+                    driveFolderId: activeFolderId,
                     modifiedTime: saved.modifiedTime || new Date().toISOString()
                 };
             }, [driveFetch, ensureDriveFolder, requestToken]);
@@ -1434,13 +1620,19 @@
                 signedIn,
                 profile,
                 files,
+                folders,
+                folderStack,
+                currentFolderId: folderStack.at(-1)?.id || folderIdRef.current,
                 loading,
                 status,
                 signIn,
                 signOut,
                 refreshFiles,
                 openExam,
-                saveExam
+                saveExam,
+                createFolder,
+                enterFolder,
+                navigateFolder
             };
         };
 
@@ -1484,6 +1676,24 @@
                 </div>
             );
         });
+
+        const SaveStatus = ({ status }) => {
+            const normalized = String(status || '').toLowerCase();
+            const state = normalized.includes('failed') || normalized.includes('unable')
+                ? 'error'
+                : normalized.includes('saving') || normalized.includes('unsaved')
+                    ? 'saving'
+                    : normalized.includes('saved')
+                        ? 'saved'
+                        : '';
+            if (!status) return null;
+            return (
+                <div className="drive-save-status no-export">
+                    <span className={`drive-save-dot ${state}`}></span>
+                    <span>{status}</span>
+                </div>
+            );
+        };
 
         const RichInput = ({ value, onChange, placeholder, minH="1.2em", image, onImg, contentRef, className="" }) => {
             const innerRef = useRef(null);
@@ -2044,7 +2254,7 @@
                                 <MatIcon name="folder" />
                             </button>
                             <input className="doc-title" value={title} onChange={e=>setTitle(e.target.value)} />
-                            <div className="drive-save-status no-export">{saveStatus}</div>
+                            <SaveStatus status={saveStatus} />
                         </div>
                         
                         <div className="viewport" ref={containerRef}>
@@ -2191,9 +2401,7 @@
 
         const DriveLogo = ({ name = "Wonderxam" }) => (
             <div className="drive-brand">
-                <svg viewBox="0 0 40 24" fill="none" aria-hidden="true">
-                    <path d="M4 22 L20 6 L36 22" stroke="#E07A3C" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
+                <MatIcon name="school" />
                 <span className="brand-name">{name}</span>
             </div>
         );
@@ -2236,12 +2444,22 @@
             </button>
         );
 
+        const FolderCard = ({ folder, onOpen }) => (
+            <button className="drive-card folder" type="button" onClick={() => onOpen(folder)}>
+                <div className="drive-card-preview">
+                    <MatIcon name="folder" className="text-[46px]" />
+                </div>
+                <div>
+                    <div className="drive-card-title">{folder.name || 'Folder'}</div>
+                    <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime) || 'Folder'}</div>
+                </div>
+            </button>
+        );
+
         const WelcomeScreen = ({ ready, status, onSignIn }) => (
             <div id="welcome-view">
                 <div className="welcome-logo">
-                    <svg viewBox="0 0 40 24" fill="none" aria-hidden="true">
-                        <path d="M4 22 L20 6 L36 22" stroke="#E07A3C" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    </svg>
+                    <MatIcon name="school" />
                     <span className="brand-name">Wonderxam</span>
                 </div>
                 <button className="drive-btn drive-btn-primary" type="button" disabled={!ready} onClick={onSignIn}>
@@ -2253,11 +2471,18 @@
 
         const DriveHome = ({ drive, onCreate, onOpen }) => {
             const [showModal, setShowModal] = useState(false);
+            const [modalMode, setModalMode] = useState('exam');
             const [examName, setExamName] = useState('');
             const [search, setSearch] = useState('');
+            const [fabOpen, setFabOpen] = useState(false);
 
             const handleCreate = () => {
-                onCreate(examName.trim() || DEFAULT_TITLE);
+                const name = examName.trim();
+                if (modalMode === 'folder') {
+                    drive.createFolder(name || 'New Folder', search);
+                } else {
+                    onCreate(name || DEFAULT_TITLE);
+                }
                 setShowModal(false);
                 setExamName('');
             };
@@ -2269,13 +2494,18 @@
             }, [drive.files, search]);
 
             const recentFiles = filteredFiles.slice(0, 8);
+            const openCreateModal = (mode) => {
+                setModalMode(mode);
+                setExamName('');
+                setShowModal(true);
+                setFabOpen(false);
+            };
 
             return (
                 <div id="drive-home">
                     <div className="drive-topbar">
                         <DriveLogo />
                         <div className="drive-actions">
-                            <button className="drive-btn drive-btn-primary" type="button" onClick={() => setShowModal(true)}>New Exam</button>
                             <ProfileMenu profile={drive.profile} onRefresh={() => drive.refreshFiles(search)} onSignOut={drive.signOut} />
                         </div>
                     </div>
@@ -2296,6 +2526,19 @@
                             <div className="drive-status">{drive.status}</div>
                         </div>
 
+                        {drive.folderStack.length > 0 && (
+                            <div className="drive-breadcrumbs">
+                                {drive.folderStack.map((folder, index) => (
+                                    <React.Fragment key={folder.id}>
+                                        {index > 0 && <span>/</span>}
+                                        <button className="drive-breadcrumb" type="button" onClick={() => drive.navigateFolder(index, search)}>
+                                            {folder.name}
+                                        </button>
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
+
                         <section className="drive-section">
                             <div className="drive-section-header">
                                 <div className="drive-section-title">Recents</div>
@@ -2313,31 +2556,50 @@
                             <div className="drive-section-header">
                                 <div className="drive-section-title">My Drive</div>
                             </div>
-                            {filteredFiles.length ? (
+                            {(drive.folders.length || filteredFiles.length) ? (
                                 <div className="drive-file-grid">
+                                    {drive.folders.map(folder => <FolderCard key={folder.id} folder={folder} onOpen={(folder) => drive.enterFolder(folder, search)} />)}
                                     {filteredFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} />)}
                                 </div>
                             ) : (
-                                <div className="drive-empty">{drive.loading ? 'Loading exams...' : 'No Wonderxam exams found in Drive.'}</div>
+                                <div className="drive-empty">{drive.loading ? 'Loading items...' : 'No folders or Wonderxam exams found here.'}</div>
                             )}
                         </section>
+                    </div>
+
+                    <div className="drive-fab-wrap">
+                        {fabOpen && (
+                            <div className="drive-fab-menu">
+                                <button type="button" onClick={() => openCreateModal('exam')}>
+                                    <MatIcon name="description" />
+                                    <span>Exam</span>
+                                </button>
+                                <button type="button" onClick={() => openCreateModal('folder')}>
+                                    <MatIcon name="create_new_folder" />
+                                    <span>Folder</span>
+                                </button>
+                            </div>
+                        )}
+                        <button className="drive-fab" type="button" aria-label="Create" aria-expanded={fabOpen} onClick={() => setFabOpen(v => !v)}>
+                            <MatIcon name={fabOpen ? 'close' : 'add'} />
+                        </button>
                     </div>
 
                     {showModal && (
                         <div className="modal-overlay">
                             <div className="modal-card">
-                                <h2 className="modal-title">New Exam</h2>
+                                <h2 className="modal-title">{modalMode === 'folder' ? 'New Folder' : 'New Exam'}</h2>
                                 <div className="input-group">
                                     <input 
                                         type="text" 
                                         className="mat-input" 
-                                        placeholder="Untitled Exam" 
+                                        placeholder={modalMode === 'folder' ? 'New Folder' : 'Untitled Exam'} 
                                         autoFocus
                                         value={examName}
                                         onChange={(e) => setExamName(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                                     />
-                                    <span className="input-label">Exam Name</span>
+                                    <span className="input-label">{modalMode === 'folder' ? 'Folder Name' : 'Exam Name'}</span>
                                 </div>
                                 <div className="modal-actions">
                                     <button className="btn-text" onClick={() => setShowModal(false)}>Cancel</button>
@@ -2410,13 +2672,13 @@
 
             const createExam = useCallback((name) => {
                 if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-                const next = buildExamDocument(name);
+                const next = { ...buildExamDocument(name), driveFolderId: drive.currentFolderId || null };
                 setCurrentDocument(next);
                 latestDocumentRef.current = next;
                 setSaveStatus('Unsaved changes');
                 setDocumentKey(k => k + 1);
                 setView('editor');
-            }, []);
+            }, [drive.currentFolderId]);
 
             const openExam = useCallback(async (file) => {
                 try {
