@@ -1454,28 +1454,51 @@
                 return generateLightweightPDF(doc);
             }
             
-            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            for (let i = 0; i < pages.length; i++) {
-                const cvs = await html2canvas(pages[i], {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false
-                });
-                if (i > 0) pdf.addPage();
-                pdf.addImage(cvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+            const appShell = document.querySelector('.app-shell');
+            const wasExporting = appShell?.classList.contains('exporting');
+            if (appShell && !wasExporting) {
+                appShell.classList.add('exporting');
             }
             
-            const jsonStr = JSON.stringify(serializeExamDocument(doc));
-            const base64Data = base64EncodeUTF8(jsonStr);
+            const scaleWrapper = document.querySelector('.pages-scale-wrapper');
+            const originalTransform = scaleWrapper ? scaleWrapper.style.transform : '';
+            if (scaleWrapper) {
+                scaleWrapper.style.transform = 'scale(1)';
+            }
             
-            pdf.setProperties({
-                title: doc.title || DEFAULT_TITLE,
-                subject: base64Data,
-                keywords: 'wonderxam-exam-data'
-            });
+            await new Promise(r => setTimeout(r, 100));
             
-            return pdf.output('blob');
+            try {
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                for (let i = 0; i < pages.length; i++) {
+                    const cvs = await html2canvas(pages[i], {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(cvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+                }
+                
+                const jsonStr = JSON.stringify(serializeExamDocument(doc));
+                const base64Data = base64EncodeUTF8(jsonStr);
+                
+                pdf.setProperties({
+                    title: doc.title || DEFAULT_TITLE,
+                    subject: base64Data,
+                    keywords: 'wonderxam-exam-data'
+                });
+                
+                return pdf.output('blob');
+            } finally {
+                if (scaleWrapper) {
+                    scaleWrapper.style.transform = originalTransform;
+                }
+                if (appShell && !wasExporting) {
+                    appShell.classList.remove('exporting');
+                }
+            }
         };
         const DRIVE_FOLDER_COLORS = [
             '#f83a22', '#fa573c', '#d06b64', '#ac725e',
@@ -1557,6 +1580,12 @@
         };
 
         const stripWonderxamExtension = (name) => String(name || DEFAULT_TITLE).replace(/\.(wonderxam\.json|wonderxam\.pdf|pdf)$/i, '');
+
+        const normalizeDriveThumbnail = (link) => {
+            if (!link) return '';
+            const resized = link.replace(/=s\d+/, '=s220');
+            return resized.includes('=s') ? resized : `${resized}&sz=w220-h310`;
+        };
 
         const formatDriveDate = (value) => {
             if (!value) return '';
@@ -2034,28 +2063,51 @@
                     try {
                         const firstPage = document.querySelector('.a4-page');
                         if (firstPage) {
-                            const cvs = await html2canvas(firstPage, {
-                                scale: 1,
-                                useCORS: true,
-                                backgroundColor: '#ffffff',
-                                logging: false
-                            });
-                            const croppedCvs = document.createElement('canvas');
-                            croppedCvs.width = cvs.width;
-                            croppedCvs.height = cvs.height * 0.55;
-                            const ctx = croppedCvs.getContext('2d');
-                            ctx.drawImage(cvs, 0, 0);
+                            const appShell = document.querySelector('.app-shell');
+                            const wasExporting = appShell?.classList.contains('exporting');
+                            if (appShell && !wasExporting) {
+                                appShell.classList.add('exporting');
+                            }
                             
-                            const imgData = croppedCvs.toDataURL('image/jpeg', 0.8);
-                            const base64 = imgData.split(',')[1];
-                            const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                            const scaleWrapper = document.querySelector('.pages-scale-wrapper');
+                            const originalTransform = scaleWrapper ? scaleWrapper.style.transform : '';
+                            if (scaleWrapper) {
+                                scaleWrapper.style.transform = 'scale(1)';
+                            }
                             
-                            metadata.contentHints = {
-                                thumbnail: {
-                                    image: base64Url,
-                                    mimeType: 'image/jpeg'
+                            await new Promise(r => setTimeout(r, 100));
+                            
+                            try {
+                                const cvs = await html2canvas(firstPage, {
+                                    scale: 1.5,
+                                    useCORS: true,
+                                    backgroundColor: '#ffffff',
+                                    logging: false
+                                });
+                                const croppedCvs = document.createElement('canvas');
+                                croppedCvs.width = cvs.width;
+                                croppedCvs.height = cvs.height * 0.55;
+                                const ctx = croppedCvs.getContext('2d');
+                                ctx.drawImage(cvs, 0, 0);
+                                
+                                const imgData = croppedCvs.toDataURL('image/jpeg', 0.8);
+                                const base64 = imgData.split(',')[1];
+                                const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                                
+                                metadata.contentHints = {
+                                    thumbnail: {
+                                        image: base64Url,
+                                        mimeType: 'image/jpeg'
+                                    }
+                                };
+                            } finally {
+                                if (scaleWrapper) {
+                                    scaleWrapper.style.transform = originalTransform;
                                 }
-                            };
+                                if (appShell && !wasExporting) {
+                                    appShell.classList.remove('exporting');
+                                }
+                            }
                         }
                     } catch (err) {
                         console.error('Failed to generate custom thumbnail:', err);
@@ -3076,32 +3128,47 @@
             );
         };
 
-        const DriveCard = ({ file, onOpen, onDelete, onMove, onDragStart, draggable = true }) => (
-            <div
-                className="drive-card"
-                role="button"
-                tabIndex={0}
-                draggable={draggable}
-                onClick={() => onOpen(file)}
-                onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}
-                onDragStart={(e) => {
-                    if (!draggable) { e.preventDefault(); return; }
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.stopPropagation();
-                    onDragStart?.(file);
-                }}
-                onDragEnd={() => onDragStart?.(null)}
-            >
-                <div className="drive-card-title" title={file.name}>{stripWonderxamExtension(file.name)}</div>
-                <div className="drive-card-preview">
-                    <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
-                        <path d="M14 2v4h4"/>
-                    </svg>
+        const DriveCard = ({ file, onOpen, onDelete, onMove, onDragStart, draggable = true }) => {
+            const [imgError, setImgError] = useState(false);
+            const hasThumbnail = file.thumbnailLink && !file.thumbnailLink.includes('default');
+            const thumbUrl = hasThumbnail ? normalizeDriveThumbnail(file.thumbnailLink) : null;
+
+            return (
+                <div
+                    className="drive-card"
+                    role="button"
+                    tabIndex={0}
+                    draggable={draggable}
+                    onClick={() => onOpen(file)}
+                    onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}
+                    onDragStart={(e) => {
+                        if (!draggable) { e.preventDefault(); return; }
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.stopPropagation();
+                        onDragStart?.(file);
+                    }}
+                    onDragEnd={() => onDragStart?.(null)}
+                >
+                    <div className="drive-card-title" title={file.name}>{stripWonderxamExtension(file.name)}</div>
+                    <div className="drive-card-preview">
+                        {thumbUrl && !imgError ? (
+                            <img 
+                                src={thumbUrl} 
+                                alt={`${file.name} preview`} 
+                                loading="lazy" 
+                                onError={() => setImgError(true)} 
+                            />
+                        ) : (
+                            <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                                <path d="M14 2v4h4"/>
+                            </svg>
+                        )}
+                    </div>
+                    <DriveItemMenu item={file} type="file" onDelete={onDelete} onMove={onMove} />
                 </div>
-                <DriveItemMenu item={file} type="file" onDelete={onDelete} onMove={onMove} />
-            </div>
-        );
+            );
+        };
 
         const FolderCard = ({ folder, onOpen, onDelete, onColor, onMove, onDragStart, onDropItem }) => {
             const [isDragOver, setIsDragOver] = useState(false);
@@ -3701,15 +3768,23 @@
                 }
             }, [drive]);
 
-            const goHome = useCallback(() => {
+            const goHome = useCallback(async () => {
                 if (saveTimerRef.current) {
                     clearTimeout(saveTimerRef.current);
                     saveTimerRef.current = null;
-                    persistCurrentDocument();
+                }
+                setSaveStatus('Saving high-fidelity preview...');
+                try {
+                    const pdfBlob = await generateFullPDFBlob(latestDocumentRef.current);
+                    await drive.saveExam(latestDocumentRef.current, pdfBlob);
+                    setSaveStatus('Saved to Drive');
+                } catch (err) {
+                    console.error('Failed to save high-fidelity PDF:', err);
+                    setSaveStatus('Failed to save final PDF');
                 }
                 drive.refreshFiles();
                 setView('home');
-            }, [drive, persistCurrentDocument]);
+            }, [drive]);
 
             if (!drive.signedIn) {
                 return <WelcomeScreen ready={drive.ready} status={drive.status} onSignIn={drive.signIn} />;
