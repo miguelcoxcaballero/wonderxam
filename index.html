@@ -2906,15 +2906,20 @@
             );
         };
 
-        const DriveCard = ({ file, onOpen, onDelete, onMove, onDragStart }) => (
+        const DriveCard = ({ file, onOpen, onDelete, onMove, onDragStart, draggable = true }) => (
             <div
                 className="drive-card"
                 role="button"
                 tabIndex={0}
-                draggable
+                draggable={draggable}
                 onClick={() => onOpen(file)}
                 onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}
-                onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); onDragStart?.(file); }}
+                onDragStart={(e) => {
+                    if (!draggable) { e.preventDefault(); return; }
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.stopPropagation();
+                    onDragStart?.(file);
+                }}
                 onDragEnd={() => onDragStart?.(null)}
             >
                 <div className="drive-card-title" title={file.name}>{stripWonderxamExtension(file.name)}</div>
@@ -3137,6 +3142,7 @@
             const [showBin, setShowBin] = useState(false);
             const [moveTarget, setMoveTarget] = useState(null);
             const draggedItemRef = useRef(null);
+            const [dragOverIndex, setDragOverIndex] = useState(null);
 
             const handleCreate = () => {
                 const name = examName.trim();
@@ -3221,7 +3227,7 @@
                                             onOpen={onOpen}
                                             onDelete={requestDelete}
                                             onMove={(item) => setMoveTarget(item)}
-                                            onDragStart={(item) => { draggedItemRef.current = item; }}
+                                            draggable={false}
                                         />
                                     ))}
                                 </div>
@@ -3233,19 +3239,39 @@
                         <section className="drive-section">
                             <div className="drive-section-header">
                                 <div className="drive-section-title">My Drive</div>
-                                {drive.folderStack.length > 1 && (
-                                    <button
-                                        className="drive-btn drive-btn-secondary drive-icon-btn"
-                                        type="button"
-                                        title="Up one folder"
-                                        aria-label="Up one folder"
-                                        onClick={() => drive.navigateFolder(drive.folderStack.length - 2, search)}
-                                    >
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="15 18 9 12 15 6"/>
-                                        </svg>
-                                    </button>
-                                )}
+                                {drive.folderStack.length > 1 && (() => {
+                                     const parentFolder = drive.folderStack[drive.folderStack.length - 2];
+                                     return (
+                                         <button
+                                             className={`drive-btn drive-btn-secondary drive-icon-btn transition-all duration-150 ${dragOverIndex === 'up-button' ? 'bg-purple-100 text-purple-700 border border-dashed border-purple-400 scale-105 shadow-sm' : ''}`}
+                                             type="button"
+                                             title="Up one folder"
+                                             aria-label="Up one folder"
+                                             onClick={() => drive.navigateFolder(drive.folderStack.length - 2, search)}
+                                             onDragOver={(e) => {
+                                                 e.preventDefault();
+                                                 e.dataTransfer.dropEffect = 'move';
+                                                 setDragOverIndex('up-button');
+                                             }}
+                                             onDragLeave={() => {
+                                                 setDragOverIndex(null);
+                                             }}
+                                             onDrop={async (e) => {
+                                                 e.preventDefault();
+                                                 setDragOverIndex(null);
+                                                 const dragged = draggedItemRef.current;
+                                                 if (dragged && parentFolder && dragged.id !== parentFolder.id) {
+                                                     await drive.moveItem(dragged, parentFolder.id);
+                                                 }
+                                                 draggedItemRef.current = null;
+                                             }}
+                                         >
+                                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                                 <polyline points="15 18 9 12 15 6"/>
+                                             </svg>
+                                         </button>
+                                     );
+                                 })()}
                             </div>
                             {drive.folderStack.length > 0 && (
                                 <div className="drive-breadcrumbs">
@@ -3253,9 +3279,28 @@
                                         <React.Fragment key={folder.id}>
                                             {index > 0 && <span>/</span>}
                                             <button
-                                                className={`drive-breadcrumb${index === drive.folderStack.length - 1 ? ' active' : ''}`}
+                                                className={`drive-breadcrumb transition-all duration-150 ${index === drive.folderStack.length - 1 ? ' active font-bold text-gray-900' : ''} ${dragOverIndex === index ? 'bg-purple-100 text-purple-700 border border-dashed border-purple-400 scale-105 shadow-sm px-3 rounded-lg font-semibold' : ''}`}
                                                 type="button"
                                                 onClick={() => index < drive.folderStack.length - 1 && drive.navigateFolder(index, search)}
+                                                onDragOver={(e) => {
+                                                    if (index < drive.folderStack.length - 1) {
+                                                        e.preventDefault();
+                                                        e.dataTransfer.dropEffect = 'move';
+                                                        setDragOverIndex(index);
+                                                    }
+                                                }}
+                                                onDragLeave={() => {
+                                                    setDragOverIndex(null);
+                                                }}
+                                                onDrop={async (e) => {
+                                                    e.preventDefault();
+                                                    setDragOverIndex(null);
+                                                    const dragged = draggedItemRef.current;
+                                                    if (dragged && dragged.id !== folder.id) {
+                                                        await drive.moveItem(dragged, folder.id);
+                                                    }
+                                                    draggedItemRef.current = null;
+                                                }}
                                             >
                                                 {index === 0 ? `${folder.name}/` : folder.name}
                                             </button>
