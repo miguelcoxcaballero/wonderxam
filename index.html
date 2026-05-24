@@ -936,6 +936,14 @@
             text-align: left;
         }
 
+        .drive-card-dropdown button svg {
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            min-height: 16px !important;
+            flex-shrink: 0 !important;
+        }
+
         .drive-card-dropdown button:hover {
             background: rgba(0,0,0,0.06);
         }
@@ -1074,7 +1082,13 @@
 
         .bin-item-dropdown button:hover { background: rgba(0,0,0,0.06); }
 
-        .bin-item-dropdown svg { width: 16px; height: 16px; }
+        .bin-item-dropdown svg {
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            min-height: 16px !important;
+            flex-shrink: 0 !important;
+        }
 
         .bin-loading {
             display: flex;
@@ -1390,9 +1404,79 @@
         const DRIVE_TOKEN_KEY = 'drive-token-v1';
         const DRIVE_REMEMBER_KEY = 'drive-remember-v1';
         const DRIVE_FOLDER_NAME = 'Wonderxam';
-        const DRIVE_FILE_EXTENSION = '.wonderxam.json';
-        const DRIVE_FILE_MIME = 'application/json';
-        const DRIVE_FIELDS = 'id,name,modifiedTime,createdTime,appProperties,parents';
+        const DRIVE_FILE_EXTENSION = '.wonderxam.pdf';
+        const DRIVE_FILE_MIME = 'application/pdf';
+        const DRIVE_FIELDS = 'id,name,modifiedTime,createdTime,appProperties,parents,thumbnailLink';
+
+        const base64EncodeUTF8 = (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))));
+        const base64DecodeUTF8 = (str) => decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+
+        const extractJSONFromPDF = (pdfText) => {
+            const match = pdfText.match(/\/Subject\s*\(([^)]+)\)/);
+            if (match && match[1]) {
+                try {
+                    const base64Data = match[1].trim();
+                    const jsonStr = base64DecodeUTF8(base64Data);
+                    const parsed = JSON.parse(jsonStr);
+                    if (parsed && parsed.app === 'wonderxam') {
+                        return parsed;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse embedded JSON from PDF:', e);
+                }
+            }
+            return null;
+        };
+
+        const generateLightweightPDF = (doc) => {
+            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(12);
+            pdf.text("Wonderxam Document - Edit in progress...", 20, 30);
+            pdf.text(`Title: ${doc.title || DEFAULT_TITLE}`, 20, 40);
+            pdf.text("This PDF contains the editable exam structure in its metadata.", 20, 50);
+            
+            const jsonStr = JSON.stringify(serializeExamDocument(doc));
+            const base64Data = base64EncodeUTF8(jsonStr);
+            
+            pdf.setProperties({
+                title: doc.title || DEFAULT_TITLE,
+                subject: base64Data,
+                keywords: 'wonderxam-exam-data'
+            });
+            
+            return pdf.output('blob');
+        };
+
+        const generateFullPDFBlob = async (doc) => {
+            const pages = document.querySelectorAll('.a4-page');
+            if (!pages.length) {
+                return generateLightweightPDF(doc);
+            }
+            
+            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            for (let i = 0; i < pages.length; i++) {
+                const cvs = await html2canvas(pages[i], {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                if (i > 0) pdf.addPage();
+                pdf.addImage(cvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+            }
+            
+            const jsonStr = JSON.stringify(serializeExamDocument(doc));
+            const base64Data = base64EncodeUTF8(jsonStr);
+            
+            pdf.setProperties({
+                title: doc.title || DEFAULT_TITLE,
+                subject: base64Data,
+                keywords: 'wonderxam-exam-data'
+            });
+            
+            return pdf.output('blob');
+        };
         const DRIVE_FOLDER_COLORS = [
             '#f83a22', '#fa573c', '#d06b64', '#ac725e',
             '#ff7537', '#ffad46', '#fad165', '#fbe983',
@@ -1472,7 +1556,7 @@
             return safe || DEFAULT_TITLE;
         };
 
-        const stripWonderxamExtension = (name) => String(name || DEFAULT_TITLE).replace(/\.wonderxam\.json$/i, '');
+        const stripWonderxamExtension = (name) => String(name || DEFAULT_TITLE).replace(/\.(wonderxam\.json|wonderxam\.pdf|pdf)$/i, '');
 
         const formatDriveDate = (value) => {
             if (!value) return '';
@@ -1501,7 +1585,16 @@
         });
 
         const parseExamDocument = (payload, file) => {
-            const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            let data = null;
+            if (typeof payload === 'string') {
+                if (payload.includes('%PDF')) {
+                    data = extractJSONFromPDF(payload);
+                } else {
+                    try { data = JSON.parse(payload); } catch (e) {}
+                }
+            } else {
+                data = payload;
+            }
             return {
                 title: data?.title || stripWonderxamExtension(file?.name) || DEFAULT_TITLE,
                 blocks: Array.isArray(data?.blocks) ? data.blocks : [],
@@ -1513,10 +1606,10 @@
             };
         };
 
-        const buildDriveMultipartBody = (metadata, content, mimeType = DRIVE_FILE_MIME) => {
+        const buildDriveMultipartBody = (metadata, contentBlob, mimeType = DRIVE_FILE_MIME) => {
             const form = new FormData();
             form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', new Blob([JSON.stringify(content)], { type: mimeType }));
+            form.append('file', contentBlob);
             return form;
         };
 
@@ -1801,8 +1894,8 @@
                     const fileData = await fileRes.json();
                     const globalData = await globalRes.json();
                     const nextFolders = folderData.files || [];
-                    const wonderxamFiles = (fileData.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
-                    const globalWonderxamFiles = (globalData.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
+                    const wonderxamFiles = (fileData.files || []).filter(file => /\.wonderxam\.pdf$/i.test(file.name || ''));
+                    const globalWonderxamFiles = (globalData.files || []).filter(file => /\.wonderxam\.pdf$/i.test(file.name || ''));
                     setFolders(nextFolders);
                     setFiles(wonderxamFiles);
                     setRecentFiles(globalWonderxamFiles.slice(0, 12));
@@ -1919,20 +2012,57 @@
                 refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
             }, [driveFetch, refreshFiles]);
 
-            const saveExam = useCallback(async (doc) => {
+            const saveExam = useCallback(async (doc, pdfBlob = null) => {
                 await requestToken(false);
                 const rootFolderId = await ensureDriveFolder();
                 const activeFolderId = doc.driveFolderId || folderStackRef.current.at(-1)?.id || rootFolderId;
                 const title = sanitizeFilename(doc.title || DEFAULT_TITLE);
                 const fileName = `${title}${DRIVE_FILE_EXTENSION}`;
-                const content = serializeExamDocument(doc);
+                
+                // If pdfBlob is not provided (e.g. background autosave), we write a lightweight PDF
+                const finalBlob = pdfBlob || generateLightweightPDF(doc);
+                
                 const metadata = {
                     name: fileName,
                     mimeType: DRIVE_FILE_MIME,
                     appProperties: { wonderxam: 'exam' },
                     parents: doc.driveFileId ? undefined : [activeFolderId]
                 };
-                const body = buildDriveMultipartBody(metadata, content);
+                
+                // If a full rendered pdfBlob is provided, extract custom thumbnail!
+                if (pdfBlob) {
+                    try {
+                        const firstPage = document.querySelector('.a4-page');
+                        if (firstPage) {
+                            const cvs = await html2canvas(firstPage, {
+                                scale: 1,
+                                useCORS: true,
+                                backgroundColor: '#ffffff',
+                                logging: false
+                            });
+                            const croppedCvs = document.createElement('canvas');
+                            croppedCvs.width = cvs.width;
+                            croppedCvs.height = cvs.height * 0.55;
+                            const ctx = croppedCvs.getContext('2d');
+                            ctx.drawImage(cvs, 0, 0);
+                            
+                            const imgData = croppedCvs.toDataURL('image/jpeg', 0.8);
+                            const base64 = imgData.split(',')[1];
+                            const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                            
+                            metadata.contentHints = {
+                                thumbnail: {
+                                    image: base64Url,
+                                    mimeType: 'image/jpeg'
+                                }
+                            };
+                        }
+                    } catch (err) {
+                        console.error('Failed to generate custom thumbnail:', err);
+                    }
+                }
+                
+                const body = buildDriveMultipartBody(metadata, finalBlob);
                 const url = doc.driveFileId
                     ? `https://www.googleapis.com/upload/drive/v3/files/${doc.driveFileId}?uploadType=multipart&fields=${encodeURIComponent(DRIVE_FIELDS)}`
                     : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=${encodeURIComponent(DRIVE_FIELDS)}`;
@@ -1962,7 +2092,7 @@
                     const fields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
                     const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=${fields}`);
                     const data = await res.json();
-                    const wonderxamFiles = (data.files || []).filter(f => /\.wonderxam\.json$/i.test(f.name || ''));
+                    const wonderxamFiles = (data.files || []).filter(f => /\.wonderxam\.pdf$/i.test(f.name || ''));
                     setBinFiles(wonderxamFiles);
                 } catch (err) {
                     console.error('Failed to load bin:', err);
@@ -2893,7 +3023,7 @@
                         <div className="drive-card-dropdown">
                             {isFolder && (
                                 <button type="button" onClick={() => setColorsOpen(v => !v)}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
                                         <circle cx="12" cy="12" r="9"/>
                                         <circle cx="12" cy="12" r="3.5" fill="currentColor" opacity="0.3"/>
                                     </svg>
@@ -2920,7 +3050,7 @@
                                 </div>
                             )}
                             <button type="button" onClick={() => { setOpen(false); setColorsOpen(false); onMove(item, type); }}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
                                     <path d="M3 6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                                 </svg>
                                 <span>Move</span>
@@ -2934,7 +3064,7 @@
                                     onDelete(item, type);
                                 }}
                             >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="3 6 5 6 21 6"/>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                 </svg>
@@ -3149,7 +3279,7 @@
                                             {activeBinMenu === file.id && (
                                                 <div className="bin-item-dropdown">
                                                     <button type="button" onClick={async (e) => { e.stopPropagation(); setActiveBinMenu(null); await drive.restoreItem(file); }}>
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                                                             <polyline points="3 6 5 6 21 6"/>
                                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
                                                             <path d="M10 11l2-2 2 2"/><path d="M12 9v6"/>
