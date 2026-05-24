@@ -751,6 +751,7 @@
         }
 
         .drive-card {
+            position: relative;
             border: none;
             border-radius: 16px;
             padding: 12px;
@@ -763,6 +764,7 @@
             flex-direction: column;
             gap: 12px;
             text-align: left;
+            text-decoration: none;
             transition: transform 0.16s, box-shadow 0.16s;
         }
 
@@ -787,6 +789,7 @@
         }
 
         .drive-card-title {
+            padding-right: 30px;
             font-weight: 700;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -796,6 +799,106 @@
         .drive-card-meta {
             font-size: 0.78rem;
             color: #666666;
+        }
+
+        .drive-card-menu {
+            position: absolute;
+            right: 10px;
+            bottom: 37px;
+            z-index: 4;
+        }
+
+        .drive-card-more {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.04);
+            color: #555555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .drive-card-more:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .drive-card-dropdown {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 8px);
+            width: 180px;
+            padding: 6px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.14);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .drive-card-dropdown button {
+            width: 100%;
+            min-height: 36px;
+            padding: 0 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .drive-card-dropdown button:hover {
+            background: rgba(0,0,0,0.06);
+        }
+
+        .drive-card-dropdown button.danger {
+            color: #dc2626;
+        }
+
+        .drive-color-popup {
+            width: 168px;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .drive-color-swatch {
+            width: 20px;
+            height: 20px;
+            min-height: 20px;
+            padding: 0;
+            border-radius: 999px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        .drive-card-dropdown .drive-color-swatch {
+            width: 20px;
+            min-height: 20px;
+            height: 20px;
+            padding: 0;
+            border-radius: 999px;
+            display: block;
+        }
+
+        .drive-color-swatch:hover {
+            transform: scale(1.14);
+        }
+
+        .drive-color-swatch.active {
+            border-color: #1a1a1a;
         }
 
         .drive-empty {
@@ -1114,6 +1217,14 @@
         const DRIVE_FILE_EXTENSION = '.wonderxam.json';
         const DRIVE_FILE_MIME = 'application/json';
         const DRIVE_FIELDS = 'id,name,modifiedTime,createdTime,appProperties,parents';
+        const DRIVE_FOLDER_COLORS = [
+            '#f83a22', '#fa573c', '#d06b64', '#ac725e',
+            '#ff7537', '#ffad46', '#fad165', '#fbe983',
+            '#b3dc6c', '#7bd148', '#16a765', '#42d692',
+            '#92e1c0', '#9fe1e7', '#9fc5e8', '#4986e7',
+            '#b99aff', '#a479e2', '#cd74e6', '#f691b2',
+            '#cca6ac', '#cabdbf', '#c2c2c2', '#8f8f8f',
+        ];
         const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='48' fill='%237c3aed'/%3E%3Ccircle cx='48' cy='36' r='16' fill='white' opacity='.92'/%3E%3Cpath d='M20 84c5-18 17-28 28-28s23 10 28 28' fill='white' opacity='.92'/%3E%3C/svg%3E";
         const GRID_POINTS = Array.from({ length: (ROWS + 1) * (COLS + 1) }, (_, i) => ({
             c: i % (COLS + 1),
@@ -1495,7 +1606,7 @@
                     }
                     const folderQuery = encodeURIComponent([...baseParts, `mimeType='application/vnd.google-apps.folder'`].join(' and '));
                     const fileQuery = encodeURIComponent([...baseParts, `mimeType='${DRIVE_FILE_MIME}'`].join(' and '));
-                    const folderFields = encodeURIComponent('files(id,name,mimeType,modifiedTime,createdTime,parents)');
+                    const folderFields = encodeURIComponent('files(id,name,mimeType,modifiedTime,createdTime,parents,folderColorRgb)');
                     const fileFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
                     const [folderRes, fileRes] = await Promise.all([
                         driveFetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&orderBy=name&pageSize=100&fields=${folderFields}`),
@@ -1587,6 +1698,26 @@
                 await refreshFiles(search, activeFolderId);
             }, [driveFetch, ensureDriveFolder, refreshFiles, requestToken]);
 
+            const updateFolderColor = useCallback(async (folder, color, search = '') => {
+                if (!folder?.id) return;
+                await driveFetch(`https://www.googleapis.com/drive/v3/files/${folder.id}?fields=id,name,mimeType,modifiedTime,folderColorRgb`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folderColorRgb: color })
+                });
+                await refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
+            }, [driveFetch, refreshFiles]);
+
+            const trashItem = useCallback(async (item, search = '') => {
+                if (!item?.id) return;
+                await driveFetch(`https://www.googleapis.com/drive/v3/files/${item.id}?fields=id,trashed`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trashed: true })
+                });
+                await refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
+            }, [driveFetch, refreshFiles]);
+
             const saveExam = useCallback(async (doc) => {
                 await requestToken(false);
                 const rootFolderId = await ensureDriveFolder();
@@ -1640,6 +1771,8 @@
                 openExam,
                 saveExam,
                 createFolder,
+                updateFolderColor,
+                trashItem,
                 enterFolder,
                 navigateFolder
             };
@@ -2441,8 +2574,79 @@
             );
         };
 
-        const DriveCard = ({ file, onOpen }) => (
-            <button className="drive-card" type="button" onClick={() => onOpen(file)}>
+        const DriveItemMenu = ({ item, type, onDelete, onColor }) => {
+            const [open, setOpen] = useState(false);
+            const [colorsOpen, setColorsOpen] = useState(false);
+            const isFolder = type === 'folder';
+
+            const stop = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+            };
+
+            return (
+                <div className="drive-card-menu" onClick={stop} onPointerDown={stop} onKeyDown={(event) => event.stopPropagation()}>
+                    <button
+                        className="drive-card-more"
+                        type="button"
+                        title="More actions"
+                        aria-label="More actions"
+                        aria-expanded={open}
+                        onClick={(event) => {
+                            stop(event);
+                            setOpen(v => !v);
+                            setColorsOpen(false);
+                        }}
+                    >
+                        <MatIcon name="more_vert" className="text-[18px]" />
+                    </button>
+                    {open && (
+                        <div className="drive-card-dropdown">
+                            {isFolder && (
+                                <button type="button" onClick={() => setColorsOpen(v => !v)}>
+                                    <MatIcon name="palette" className="text-[18px]" />
+                                    <span>Change color</span>
+                                </button>
+                            )}
+                            {isFolder && colorsOpen && (
+                                <div className="drive-color-popup">
+                                    {DRIVE_FOLDER_COLORS.map(color => (
+                                        <button
+                                            key={color}
+                                            className={`drive-color-swatch ${item.folderColorRgb === color ? 'active' : ''}`}
+                                            type="button"
+                                            title={color}
+                                            aria-label={`Set folder color ${color}`}
+                                            style={{ backgroundColor: color }}
+                                            onClick={() => {
+                                                setOpen(false);
+                                                setColorsOpen(false);
+                                                onColor(item, color);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            <button
+                                className="danger"
+                                type="button"
+                                onClick={() => {
+                                    setOpen(false);
+                                    setColorsOpen(false);
+                                    onDelete(item, type);
+                                }}
+                            >
+                                <MatIcon name="delete" className="text-[18px]" />
+                                <span>Move to bin</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const DriveCard = ({ file, onOpen, onDelete }) => (
+            <div className="drive-card" role="button" tabIndex={0} onClick={() => onOpen(file)} onKeyDown={(e) => e.key === 'Enter' && onOpen(file)}>
                 <div className="drive-card-preview">
                     <MatIcon name="description" className="text-[42px]" />
                 </div>
@@ -2450,19 +2654,21 @@
                     <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
                     <div className="drive-card-meta">{formatDriveDate(file.modifiedTime) || 'Wonderxam exam'}</div>
                 </div>
-            </button>
+                <DriveItemMenu item={file} type="file" onDelete={onDelete} />
+            </div>
         );
 
-        const FolderCard = ({ folder, onOpen }) => (
-            <button className="drive-card folder" type="button" onClick={() => onOpen(folder)}>
-                <div className="drive-card-preview">
+        const FolderCard = ({ folder, onOpen, onDelete, onColor }) => (
+            <div className="drive-card folder" role="button" tabIndex={0} onClick={() => onOpen(folder)} onKeyDown={(e) => e.key === 'Enter' && onOpen(folder)}>
+                <div className="drive-card-preview" style={folder.folderColorRgb ? { background: folder.folderColorRgb, color: '#ffffff' } : undefined}>
                     <MatIcon name="folder" className="text-[46px]" />
                 </div>
                 <div>
                     <div className="drive-card-title">{folder.name || 'Folder'}</div>
                     <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime) || 'Folder'}</div>
                 </div>
-            </button>
+                <DriveItemMenu item={folder} type="folder" onDelete={onDelete} onColor={onColor} />
+            </div>
         );
 
         const WelcomeScreen = ({ ready, status, onSignIn }) => (
@@ -2484,6 +2690,7 @@
             const [examName, setExamName] = useState('');
             const [search, setSearch] = useState('');
             const [fabOpen, setFabOpen] = useState(false);
+            const [confirmTarget, setConfirmTarget] = useState(null);
 
             const handleCreate = () => {
                 const name = examName.trim();
@@ -2508,6 +2715,17 @@
                 setExamName('');
                 setShowModal(true);
                 setFabOpen(false);
+            };
+            const requestDelete = (item, type) => {
+                setConfirmTarget({ item, type });
+            };
+            const confirmDelete = async () => {
+                if (!confirmTarget?.item) return;
+                await drive.trashItem(confirmTarget.item, search);
+                setConfirmTarget(null);
+            };
+            const updateColor = (folder, color) => {
+                drive.updateFolderColor(folder, color, search);
             };
 
             return (
@@ -2554,7 +2772,7 @@
                             </div>
                             {recentFiles.length ? (
                                 <div className="drive-recents">
-                                    {recentFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} />)}
+                                    {recentFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} onDelete={requestDelete} />)}
                                 </div>
                             ) : (
                                 <div className="drive-empty">{drive.loading ? 'Loading exams...' : 'No recent exams yet.'}</div>
@@ -2567,8 +2785,16 @@
                             </div>
                             {(drive.folders.length || filteredFiles.length) ? (
                                 <div className="drive-file-grid">
-                                    {drive.folders.map(folder => <FolderCard key={folder.id} folder={folder} onOpen={(folder) => drive.enterFolder(folder, search)} />)}
-                                    {filteredFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} />)}
+                                    {drive.folders.map(folder => (
+                                        <FolderCard
+                                            key={folder.id}
+                                            folder={folder}
+                                            onOpen={(folder) => drive.enterFolder(folder, search)}
+                                            onDelete={requestDelete}
+                                            onColor={updateColor}
+                                        />
+                                    ))}
+                                    {filteredFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} onDelete={requestDelete} />)}
                                 </div>
                             ) : (
                                 <div className="drive-empty">{drive.loading ? 'Loading items...' : 'No folders or Wonderxam exams found here.'}</div>
@@ -2613,6 +2839,21 @@
                                 <div className="modal-actions">
                                     <button className="btn-text" onClick={() => setShowModal(false)}>Cancel</button>
                                     <button className="btn-fill" onClick={handleCreate}>Create</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {confirmTarget && (
+                        <div className="modal-overlay">
+                            <div className="modal-card">
+                                <h2 className="modal-title">Move to bin?</h2>
+                                <p className="text-sm text-gray-600">
+                                    This will move <strong>{confirmTarget.type === 'folder' ? confirmTarget.item.name : stripWonderxamExtension(confirmTarget.item.name)}</strong> to your Drive bin.
+                                </p>
+                                <div className="modal-actions">
+                                    <button className="btn-text" onClick={() => setConfirmTarget(null)}>Cancel</button>
+                                    <button className="btn-fill" onClick={confirmDelete}>Move to bin</button>
                                 </div>
                             </div>
                         </div>
