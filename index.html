@@ -1608,6 +1608,7 @@
             const [files, setFiles] = useState([]);
             const [folders, setFolders] = useState([]);
             const [folderStack, setFolderStack] = useState([]);
+            const [recentFiles, setRecentFiles] = useState([]);
             const [loading, setLoading] = useState(false);
             const [status, setStatus] = useState('Sign in to browse your Drive.');
             const tokenClientRef = useRef(null);
@@ -1782,18 +1783,22 @@
                     }
                     const folderQuery = encodeURIComponent([...baseParts, `mimeType='application/vnd.google-apps.folder'`].join(' and '));
                     const fileQuery = encodeURIComponent([...baseParts, `mimeType='${DRIVE_FILE_MIME}'`].join(' and '));
-                    const folderFields = encodeURIComponent('files(id,name,mimeType,modifiedTime,createdTime,parents,folderColorRgb)');
-                    const fileFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
-                    const [folderRes, fileRes] = await Promise.all([
+                    const globalQuery = encodeURIComponent(`mimeType='${DRIVE_FILE_MIME}' and trashed=false`);
+                    const globalFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
+                    const [folderRes, fileRes, globalRes] = await Promise.all([
                         driveFetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&orderBy=name&pageSize=100&fields=${folderFields}`),
-                        driveFetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&orderBy=modifiedTime desc&pageSize=50&fields=${fileFields}`)
+                        driveFetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&orderBy=modifiedTime desc&pageSize=50&fields=${fileFields}`),
+                        driveFetch(`https://www.googleapis.com/drive/v3/files?q=${globalQuery}&orderBy=modifiedTime desc&pageSize=50&fields=${globalFields}`)
                     ]);
                     const folderData = await folderRes.json();
                     const fileData = await fileRes.json();
+                    const globalData = await globalRes.json();
                     const nextFolders = folderData.files || [];
                     const wonderxamFiles = (fileData.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
+                    const globalWonderxamFiles = (globalData.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
                     setFolders(nextFolders);
                     setFiles(wonderxamFiles);
+                    setRecentFiles(globalWonderxamFiles.slice(0, 12));
                     const totalItems = nextFolders.length + wonderxamFiles.length;
                     setStatus(totalItems
                         ? `${nextFolders.length} folder${nextFolders.length === 1 ? '' : 's'} and ${wonderxamFiles.length} exam${wonderxamFiles.length === 1 ? '' : 's'}.`
@@ -1886,12 +1891,25 @@
 
             const trashItem = useCallback(async (item, search = '') => {
                 if (!item?.id) return;
-                await driveFetch(`https://www.googleapis.com/drive/v3/files/${item.id}?fields=id,trashed`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ trashed: true })
-                });
-                await refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
+                
+                // Optimistic UI Update: remove from local states instantly
+                setFiles(prev => prev.filter(f => f.id !== item.id));
+                setFolders(prev => prev.filter(f => f.id !== item.id));
+                setRecentFiles(prev => prev.filter(f => f.id !== item.id));
+                
+                try {
+                    await driveFetch(`https://www.googleapis.com/drive/v3/files/${item.id}?fields=id,trashed`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trashed: true })
+                    });
+                } catch (err) {
+                    console.error('Failed to trash item:', err);
+                    await refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
+                    throw err;
+                }
+                
+                refreshFiles(search, folderStackRef.current.at(-1)?.id || null);
             }, [driveFetch, refreshFiles]);
 
             const saveExam = useCallback(async (doc) => {
@@ -1961,14 +1979,28 @@
 
             const moveItem = useCallback(async (item, targetFolderId) => {
                 if (!item?.id || !targetFolderId) return;
+                
+                // Optimistic UI Update: remove from local folder states instantly
+                setFiles(prev => prev.filter(f => f.id !== item.id));
+                setFolders(prev => prev.filter(f => f.id !== item.id));
+                setRecentFiles(prev => prev.map(f => f.id === item.id ? { ...f, parents: [targetFolderId] } : f));
+                
                 const currentParents = Array.isArray(item.parents) ? item.parents.join(',') : '';
                 const qs = new URLSearchParams({ addParents: targetFolderId });
                 if (currentParents) qs.set('removeParents', currentParents);
-                await driveFetch(
-                    `https://www.googleapis.com/drive/v3/files/${item.id}?${qs.toString()}&fields=${encodeURIComponent(DRIVE_FIELDS)}`,
-                    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }
-                );
-                await refreshFiles();
+                
+                try {
+                    await driveFetch(
+                        `https://www.googleapis.com/drive/v3/files/${item.id}?${qs.toString()}&fields=${encodeURIComponent(DRIVE_FIELDS)}`,
+                        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }
+                    );
+                } catch (err) {
+                    console.error('Failed to move item:', err);
+                    await refreshFiles();
+                    throw err;
+                }
+                
+                refreshFiles();
             }, [driveFetch, refreshFiles]);
 
             useEffect(() => {
@@ -1984,6 +2016,7 @@
                 files,
                 folders,
                 folderStack,
+                recentFiles,
                 currentFolderId: folderStack.at(-1)?.id || folderIdRef.current,
                 loading,
                 status,
@@ -3161,7 +3194,12 @@
                 return drive.files.filter(file => stripWonderxamExtension(file.name).toLowerCase().includes(term));
             }, [drive.files, search]);
 
-            const recentFiles = filteredFiles.slice(0, 8);
+            const recentFiles = useMemo(() => {
+                const term = search.trim().toLowerCase();
+                const list = drive.recentFiles || [];
+                if (!term) return list.slice(0, 8);
+                return list.filter(file => stripWonderxamExtension(file.name).toLowerCase().includes(term)).slice(0, 8);
+            }, [drive.recentFiles, search]);
             const openCreateModal = (mode) => {
                 setModalMode(mode);
                 setExamName('');
