@@ -21,8 +21,8 @@
         }
     </script>
     
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -622,6 +622,12 @@
         const MARGIN_X = (A4_W - (COLS * CELL)) / 2;
         const MARGIN_Y = (A4_H - (ROWS * CELL)) / 2;
         const PAGE_GAP = 40; // Gap between pages in px
+        const DEFAULT_TITLE = "Untitled Exam";
+        const QUESTION_TYPES = ['mcq', 'short', 'tf'];
+        const GRID_POINTS = Array.from({ length: (ROWS + 1) * (COLS + 1) }, (_, i) => ({
+            c: i % (COLS + 1),
+            r: Math.floor(i / (COLS + 1))
+        }));
 
         const FONTS = [
             { name: 'Arial (Dyslexic)', val: "Arial, sans-serif" },
@@ -645,6 +651,40 @@
             { label: 'Normal', val: 100 },
             { label: 'Large', val: 125 }
         ];
+
+        const blocksOverlap = (a, b) => !(
+            a.x + a.w <= b.x ||
+            a.x >= b.x + b.w ||
+            a.y + a.h <= b.y ||
+            a.y >= b.y + b.h
+        );
+
+        const isBlockOnPage = (b, pageIndex) => {
+            const start = b.y;
+            const end = b.y + b.h;
+            const pageStart = pageIndex * ROWS;
+            const pageEnd = (pageIndex + 1) * ROWS;
+            return start < pageEnd && end > pageStart;
+        };
+
+        const getBlockMinSize = (type) => type === 'header'
+            ? { w: 6, h: 4 }
+            : { w: 1, h: 1 };
+
+        const cloneBlock = (b) => ({
+            ...b,
+            data: {
+                ...b.data,
+                opts: Array.isArray(b.data.opts) ? [...b.data.opts] : b.data.opts
+            }
+        });
+
+        const readImageFile = (file, onLoad) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => onLoad(event.target.result);
+            reader.readAsDataURL(file);
+        };
 
         const CustomSelect = ({ label, value, options, onChange }) => {
             const [isOpen, setIsOpen] = useState(false);
@@ -728,19 +768,9 @@
         };
 
         const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
-            const points = useMemo(() => {
-                const pts = [];
-                for (let r = 0; r <= ROWS; r++) {
-                    for (let c = 0; c <= COLS; c++) {
-                        pts.push({ c, r });
-                    }
-                }
-                return pts;
-            }, []);
-
             return (
                 <div className="grid-layer absolute inset-0 pointer-events-none z-0">
-                    {points.map((pt, i) => {
+                    {GRID_POINTS.map((pt, i) => {
                         const globalRow = pageIndex * ROWS + pt.r;
                         const col = pt.c;
                         
@@ -816,13 +846,13 @@
                         {onImg && (
                             <div className="absolute right-0 top-0 opacity-0 group-hover/input:opacity-100 transition no-export z-10">
                                 <button onClick={()=>fileRef.current.click()} className="p-1 bg-white rounded shadow hover:text-purple-600"><MatIcon name="image"/></button>
-                                <input type="file" ref={fileRef} hidden accept="image/*" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>onImg(ev.target.result);r.readAsDataURL(e.target.files[0]);}}} />
+                                <input type="file" ref={fileRef} hidden accept="image/*" onChange={e=>readImageFile(e.target.files[0], onImg)} />
                             </div>
                         )}
                     </div>
                     {image && (
                         <div className="mt-1 relative inline-block">
-                            <img src={image} className="max-h-24 rounded border shadow-sm" />
+                            <img src={image} className="max-h-24 rounded border shadow-sm" alt="" />
                             <button onClick={()=>onImg(null)} className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 no-export"><MatIcon name="close"/></button>
                         </div>
                     )}
@@ -863,8 +893,8 @@
                     <div ref={contentRef} className="p-1 flex flex-col gap-4">
                         <div className="flex gap-3">
                             <div className="w-16 h-16 border border-dashed rounded flex items-center justify-center bg-gray-50 shrink-0 relative group">
-                                {b.data.logo ? <img src={b.data.logo} className="w-full h-full object-contain"/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>LOGO</span>}
-                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>update(b.id, {data:{...b.data, logo:ev.target.result}});r.readAsDataURL(e.target.files[0]);}}}/>
+                                {b.data.logo ? <img src={b.data.logo} className="w-full h-full object-contain" alt=""/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>LOGO</span>}
+                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e=>readImageFile(e.target.files[0], src=>update(b.id, {data:{...b.data, logo:src}}))}/>
                             </div>
                             <div className="flex-1 flex flex-col gap-1">
                                 <input className="font-bold bg-transparent outline-none w-full" style={{fontSize: '1.4em'}} placeholder="Institution" value={b.data.inst} onChange={e=>update(b.id, {data:{...b.data, inst:e.target.value}})}/>
@@ -880,8 +910,8 @@
                 case 'line': return <div className="w-full h-full flex items-center justify-center px-2"><div className="w-full border-b border-black"></div></div>;
                 case 'image': return (
                     <div className="w-full h-full bg-gray-50 flex items-center justify-center relative group">
-                        {b.data.src ? <img src={b.data.src} className="w-full h-full object-contain"/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>Upload Image</span>}
-                        {!b.data.src && <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>update(b.id,{data:{...b.data,src:ev.target.result}});r.readAsDataURL(e.target.files[0]);}}} />}
+                        {b.data.src ? <img src={b.data.src} className="w-full h-full object-contain" alt=""/> : <span className="text-gray-400" style={{fontSize: '0.75em'}}>Upload Image</span>}
+                        {!b.data.src && <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e=>readImageFile(e.target.files[0], src=>update(b.id,{data:{...b.data,src}}))} />}
                     </div>
                 );
                 case 'mcq': return (
@@ -965,7 +995,7 @@
             const [zoom, setZoom] = useState(1);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [exporting, setExporting] = useState(false);
-            const [title, setTitle] = useState(initialTitle || "Untitled Exam");
+            const [title, setTitle] = useState(initialTitle || DEFAULT_TITLE);
             const [overflowMap, setOverflowMap] = useState({});
 
             const containerRef = useRef(null);
@@ -991,11 +1021,8 @@
             });
 
             const getMaxHeight = useCallback((b) => {
-                const p = Math.floor(b.y / ROWS);
-                const pageEnd = (p + 1) * ROWS;
-                let limit = pageEnd - b.y; 
                 return 1000; 
-            }, [blocks]);
+            }, []);
 
             useLayoutEffect(() => {
                 const fit = () => {
@@ -1025,6 +1052,11 @@
 
             const getPage = (y) => Math.floor(y / ROWS);
 
+            const blocksByPage = useMemo(
+                () => Array.from({length: totalPages}, (_, i) => blocks.filter(b => isBlockOnPage(b, i))),
+                [blocks, totalPages]
+            );
+
             const handleContentOverflow = useCallback((id, isOverflowing) => {
                 setOverflowMap(prev => {
                     if (prev[id] === isOverflowing) return prev;
@@ -1042,7 +1074,7 @@
                     const b = prev[idx];
                     if(b.h === clampedH) return prev;
 
-                    const newBlocks = JSON.parse(JSON.stringify(prev));
+                    const newBlocks = prev.map(cloneBlock);
                     const block = newBlocks[idx];
                     block.h = clampedH;
                     
@@ -1062,7 +1094,7 @@
                         
                         newBlocks.forEach(victim => {
                             if (victim.id === pusher.id) return;
-                            const isHorizOverlapping = !(victim.x + victim.w <= pusher.x || victim.x >= pusher.x + pusher.w);
+                            const isHorizOverlapping = victim.x < pusher.x + pusher.w && victim.x + victim.w > pusher.x;
                             if (isHorizOverlapping) {
                                 if (victim.y < pusher.y + pusher.h && victim.y + victim.h > pusher.y) {
                                     const neededY = pusher.y + pusher.h;
@@ -1091,41 +1123,47 @@
 
             const add = (type) => {
                 setSidebarOpen(false);
-                let w=4, h=2, data={};
-                const qNum = blocks.filter(b=>['mcq','short','tf'].includes(b.type)).length + 1;
+                setBlocks(prev => {
+                    let w=4, h=2, data={};
+                    const qNum = prev.filter(b=>QUESTION_TYPES.includes(b.type)).length + 1;
 
-                if(type==='header'){w=18;h=5; data={inst:'', title:'', logo:null};}
-                else if(type==='text'){w=18;h=1; data={text:''};} 
-                else if(type==='line'){w=18;h=1; data={};}
-                else if(type==='image'){w=6;h=6; data={src:null};}
-                else if(type==='mcq'){w=18;h=1; data={num:qNum+'.', q:'', opts:['']};} 
-                else if(type==='short'){w=18;h=2; data={num:qNum+'.', q:''};} 
-                else if(type==='tf'){w=18;h=1; data={num:qNum+'.', q:''};} 
+                    if(type==='header'){w=18;h=5; data={inst:'', title:'', logo:null};}
+                    else if(type==='text'){w=18;h=1; data={text:''};} 
+                    else if(type==='line'){w=18;h=1; data={};}
+                    else if(type==='image'){w=6;h=6; data={src:null};}
+                    else if(type==='mcq'){w=18;h=1; data={num:qNum+'.', q:'', opts:['']};} 
+                    else if(type==='short'){w=18;h=2; data={num:qNum+'.', q:''};} 
+                    else if(type==='tf'){w=18;h=1; data={num:qNum+'.', q:''};} 
 
-                let y = 0;
-                let found = false;
-                while(!found && y < ROWS*10) {
-                    if (getPage(y) !== getPage(y + h - 1)) {
-                        y = (getPage(y) + 1) * ROWS;
-                        continue;
-                    }
-                    for(let x=0; x<=COLS-w; x++) {
-                        let hit = false;
-                        for(let b of blocks) {
-                            if(x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y) { hit = true; break; }
+                    let y = 0;
+                    while(y < ROWS*10) {
+                        if (getPage(y) !== getPage(y + h - 1)) {
+                            y = (getPage(y) + 1) * ROWS;
+                            continue;
                         }
-                        if(!hit) {
-                            setBlocks([...blocks, { id:Date.now(), type, x, y, w, h, data }]);
-                            found = true;
-                            break;
+                        for(let x=0; x<=COLS-w; x++) {
+                            const candidate = { x, y, w, h };
+                            const hit = prev.some(b => blocksOverlap(candidate, b));
+                            if(!hit) {
+                                return [...prev, { id: Date.now() + Math.random(), type, x, y, w, h, data }];
+                            }
                         }
+                        y++;
                     }
-                    if (!found) y++;
-                }
+                    return prev;
+                });
             };
 
-            const updateBlock = (id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b));
-            const removeBlock = (id) => setBlocks(prev => prev.filter(b => b.id!==id));
+            const updateBlock = useCallback((id, partial) => setBlocks(prev => prev.map(b => b.id===id ? {...b, ...partial} : b)), []);
+            const removeBlock = useCallback((id) => {
+                setBlocks(prev => prev.filter(b => b.id!==id));
+                setOverflowMap(prev => {
+                    if (!(id in prev)) return prev;
+                    const next = {...prev};
+                    delete next[id];
+                    return next;
+                });
+            }, []);
 
             const getPointerPos = (e) => {
                 if(e.touches && e.touches.length > 0) {
@@ -1140,6 +1178,7 @@
 
                 const pos = getPointerPos(e);
                 const b = blocks.find(x=>x.id===id);
+                if (!b) return;
                 setDrag({ 
                     active: true, 
                     id, 
@@ -1190,14 +1229,9 @@
                             else ny = prevPageEnd;
                         }
 
+                        const candidate = { x: nx, y: ny, w: drag.origW, h: drag.origH };
                         for(let ob of otherBlocks) {
-                            const isOver = !(
-                                nx + drag.origW <= ob.x || 
-                                nx >= ob.x + ob.w || 
-                                ny + drag.origH <= ob.y || 
-                                ny >= ob.y + ob.h
-                            );
-                            if(isOver) { 
+                            if(blocksOverlap(candidate, ob)) { 
                                 valid = false; 
                                 collisions.push(ob.id);
                             }
@@ -1215,14 +1249,9 @@
 
                     } else {
                         const b = blocks.find(x => x.id === drag.id);
+                        if (!b) return;
                         
-                        let reqMinW = 1;
-                        let reqMinH = 1;
-                        
-                        if (b.type === 'header') {
-                            reqMinW = 6;
-                            reqMinH = 4;
-                        }
+                        const minSize = getBlockMinSize(b.type);
 
                         let nw = Math.max(1, Math.min(COLS - drag.origX, drag.origW + gridDx));
                         let nh = Math.max(1, drag.origH + gridDy);
@@ -1233,20 +1262,15 @@
                         const maxH = ((p+1)*ROWS) - drag.origY;
                         nh = Math.min(nh, maxH, ROWS);
 
+                        const candidate = { x: drag.origX, y: drag.origY, w: nw, h: nh };
                         for(let ob of otherBlocks) {
-                            const isOver = !(
-                                drag.origX + nw <= ob.x || 
-                                drag.origX >= ob.x + ob.w || 
-                                drag.origY + nh <= ob.y || 
-                                drag.origY >= ob.y + ob.h
-                            );
-                            if(isOver) { 
+                            if(blocksOverlap(candidate, ob)) { 
                                 valid = false; 
                                 collisions.push(ob.id);
                             }
                         }
 
-                        if (nw < reqMinW || nh < reqMinH) {
+                        if (nw < minSize.w || nh < minSize.h) {
                             valid = false;
                         }
 
@@ -1268,27 +1292,19 @@
                             }
                         } else {
                             const b = blocks.find(x => x.id === drag.id);
-                            let reqMinW = 1; let reqMinH = 1;
-                            if (b.type === 'header') { reqMinW = 6; reqMinH = 4; }
+                            if (b) {
+                                const minSize = getBlockMinSize(b.type);
 
-                            const finalW = Math.max(drag.resizeW, reqMinW);
-                            const finalH = Math.max(drag.resizeH, reqMinH);
+                                const finalW = Math.max(drag.resizeW, minSize.w);
+                                const finalH = Math.max(drag.resizeH, minSize.h);
 
-                            const otherBlocks = blocks.filter(x => x.id !== drag.id);
-                            let hasCollision = false;
-                            
-                            for(let ob of otherBlocks) {
-                                const isOver = !(
-                                    b.x + finalW <= ob.x || 
-                                    b.x >= ob.x + ob.w || 
-                                    b.y + finalH <= ob.y || 
-                                    b.y >= ob.y + ob.h
-                                );
-                                if(isOver) { hasCollision = true; break; }
-                            }
+                                const otherBlocks = blocks.filter(x => x.id !== drag.id);
+                                const candidate = { x: b.x, y: b.y, w: finalW, h: finalH };
+                                const hasCollision = otherBlocks.some(ob => blocksOverlap(candidate, ob));
 
-                            if (!hasCollision) {
-                                updateBlock(drag.id, {w: finalW, h: finalH});
+                                if (!hasCollision) {
+                                    updateBlock(drag.id, {w: finalW, h: finalH});
+                                }
                             }
                         }
                     }
@@ -1307,7 +1323,7 @@
                     window.removeEventListener('touchmove', move);
                     window.removeEventListener('touchend', up);
                 }
-            }, [drag, blocks, zoom, overflowMap]);
+            }, [drag, blocks, zoom, updateBlock]);
 
             const doExport = async () => {
                 setExporting(true);
@@ -1363,11 +1379,7 @@
                                                     }
                                                 })()}
 
-                                                {blocks.filter(b => {
-                                                    const start = b.y; const end = b.y + b.h;
-                                                    const pageStart = i * ROWS; const pageEnd = (i + 1) * ROWS;
-                                                    return start < pageEnd && end > pageStart;
-                                                }).map(b => {
+                                                {blocksByPage[i].map(b => {
                                                     const isActive = drag.active && drag.id === b.id;
                                                     const isColliding = drag.active && drag.collidingIds.includes(b.id);
                                                     const isOverflow = overflowMap[b.id] && isActive;
@@ -1500,7 +1512,7 @@
                     if (examName.trim()) {
                         onStart(examName);
                     } else {
-                        onStart("Untitled Exam");
+                        onStart(DEFAULT_TITLE);
                     }
                 }, 400);
             };
@@ -1540,7 +1552,7 @@
                                         autoFocus
                                         value={examName}
                                         onChange={(e) => setExamName(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                                     />
                                     <span className="input-label">Exam Name</span>
                                 </div>
@@ -1557,7 +1569,7 @@
 
         function App() {
             const [view, setView] = useState('home');
-            const [initialTitle, setInitialTitle] = useState("Untitled Exam");
+            const [initialTitle, setInitialTitle] = useState(DEFAULT_TITLE);
 
             if (view === 'home') {
                 return <HomeScreen onStart={(name) => {
