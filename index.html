@@ -410,6 +410,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; }}
         @keyframes heroEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         @keyframes menuEnter {
             0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
@@ -906,6 +907,104 @@
             background: rgba(255,255,255,0.65);
             border-radius: 16px;
             padding: 18px;
+        }
+
+        .bin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 360px;
+            overflow-y: auto;
+            scroll-padding-bottom: 64px;
+        }
+
+        .bin-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        .bin-item svg {
+            width: 18px;
+            height: 18px;
+            color: #6b7280;
+            flex: 0 0 auto;
+        }
+
+        .bin-item-meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .bin-item-menu {
+            margin-left: auto;
+            position: relative;
+        }
+
+        .bin-item-more {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .bin-item-more:hover { background: rgba(0,0,0,0.1); }
+
+        .bin-item-dropdown {
+            position: absolute;
+            right: 0;
+            top: 34px;
+            background: white;
+            border-radius: 12px;
+            padding: 6px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 10;
+            min-width: 120px;
+        }
+
+        .bin-item-dropdown button {
+            border: none;
+            background: transparent;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .bin-item-dropdown button:hover { background: rgba(0,0,0,0.06); }
+
+        .bin-item-dropdown svg { width: 16px; height: 16px; }
+
+        .bin-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 10px;
         }
 
         .drive-save-status {
@@ -1749,6 +1848,40 @@
                 };
             }, [driveFetch, ensureDriveFolder, requestToken]);
 
+            const [binFiles, setBinFiles] = useState([]);
+            const [binLoading, setBinLoading] = useState(false);
+
+            const fetchBin = useCallback(async () => {
+                if (!tokenRef.current.accessToken) return;
+                setBinLoading(true);
+                setBinFiles([]);
+                try {
+                    const q = encodeURIComponent(`trashed=true and mimeType='${DRIVE_FILE_MIME}'`);
+                    const fields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
+                    const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=${fields}`);
+                    const data = await res.json();
+                    const wonderxamFiles = (data.files || []).filter(f => /\.wonderxam\.json$/i.test(f.name || ''));
+                    setBinFiles(wonderxamFiles);
+                } catch (err) {
+                    console.error('Failed to load bin:', err);
+                } finally {
+                    setBinLoading(false);
+                }
+            }, [driveFetch]);
+
+            const restoreItem = useCallback(async (file) => {
+                if (!file?.id) return;
+                const parents = Array.isArray(file.parents) ? file.parents : [];
+                const params = parents.length ? `?addParents=${parents.join(',')}` : '';
+                await driveFetch(`https://www.googleapis.com/drive/v3/files/${file.id}${params}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trashed: false })
+                });
+                await fetchBin();
+                await refreshFiles();
+            }, [driveFetch, fetchBin, refreshFiles]);
+
             useEffect(() => {
                 if (ready && signedIn) {
                     refreshFiles();
@@ -1774,7 +1907,11 @@
                 updateFolderColor,
                 trashItem,
                 enterFolder,
-                navigateFolder
+                navigateFolder,
+                binFiles,
+                binLoading,
+                fetchBin,
+                restoreItem
             };
         };
 
@@ -2684,6 +2821,83 @@
             </div>
         );
 
+        const BinModal = ({ drive, onClose }) => {
+            const [activeBinMenu, setActiveBinMenu] = useState(null);
+
+            const toggleMenu = (id) => {
+                setActiveBinMenu(prev => prev === id ? null : id);
+            };
+
+            return (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+                    <div className="modal-card" style={{ maxWidth: 480, maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <h2 className="modal-title">Bin</h2>
+                        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>Wonderxam exams in your Drive bin.</p>
+
+                        {drive.binLoading && (
+                            <div className="bin-loading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                                <span>Loading bin...</span>
+                            </div>
+                        )}
+
+                        {!drive.binLoading && drive.binFiles.length === 0 && (
+                            <div className="drive-empty">Bin is empty.</div>
+                        )}
+
+                        {drive.binFiles.length > 0 && (
+                            <div className="bin-list">
+                                {drive.binFiles.map(file => (
+                                    <div key={file.id} className="bin-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M6 2h8l4 4v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                                            <path d="M14 2v6h6"/>
+                                        </svg>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {stripWonderxamExtension(file.name)}
+                                            </div>
+                                            <div className="bin-item-meta">Modified {formatDriveDate(file.modifiedTime || file.createdTime)}</div>
+                                        </div>
+                                        <div className="bin-item-menu">
+                                            <button
+                                                className="bin-item-more"
+                                                type="button"
+                                                title="More actions"
+                                                onClick={(e) => { e.stopPropagation(); toggleMenu(file.id); }}
+                                            >
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                                </svg>
+                                            </button>
+                                            {activeBinMenu === file.id && (
+                                                <div className="bin-item-dropdown">
+                                                    <button type="button" onClick={async (e) => { e.stopPropagation(); setActiveBinMenu(null); await drive.restoreItem(file); }}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <polyline points="3 6 5 6 21 6"/>
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                                                            <path d="M10 11l2-2 2 2"/><path d="M12 9v6"/>
+                                                        </svg>
+                                                        <span>Restore</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="modal-actions">
+                            <button className="btn-fill" onClick={onClose}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const DriveHome = ({ drive, onCreate, onOpen }) => {
             const [showModal, setShowModal] = useState(false);
             const [modalMode, setModalMode] = useState('exam');
@@ -2691,6 +2905,7 @@
             const [search, setSearch] = useState('');
             const [fabOpen, setFabOpen] = useState(false);
             const [confirmTarget, setConfirmTarget] = useState(null);
+            const [showBin, setShowBin] = useState(false);
 
             const handleCreate = () => {
                 const name = examName.trim();
@@ -2739,8 +2954,14 @@
 
                     <div className="drive-main">
                         <div className="drive-toolbar">
-                            <button className="drive-btn drive-btn-secondary drive-icon-btn" type="button" title="Refresh" aria-label="Refresh" onClick={() => drive.refreshFiles(search)}>
-                                <MatIcon name="refresh" />
+                            <button
+                                className="drive-btn drive-btn-secondary drive-icon-btn"
+                                type="button"
+                                title="Bin"
+                                aria-label="Bin"
+                                onClick={() => { drive.fetchBin(); setShowBin(true); }}
+                            >
+                                <MatIcon name="delete" />
                             </button>
                             <input
                                 className="drive-search"
@@ -2857,6 +3078,10 @@
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {showBin && (
+                        <BinModal drive={drive} onClose={() => setShowBin(false)} />
                     )}
                 </div>
             );
