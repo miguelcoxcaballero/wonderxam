@@ -30,6 +30,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer data-auto_prompt="false"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -456,6 +457,367 @@
             border-radius: 50%; filter: blur(60px); transform: translate(-50%, -50%); pointer-events: none; z-index: 0;
         }
 
+        /* --- GOOGLE DRIVE HOME --- */
+        #welcome-view,
+        #drive-home {
+            position: fixed;
+            inset: 0;
+            background: #f5f5f0;
+            color: #1a1a1a;
+            font-family: 'Google Sans', 'DM Sans', 'Roboto', sans-serif;
+            z-index: 1200;
+        }
+
+        #welcome-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 56px;
+            padding: 48px 32px;
+        }
+
+        .welcome-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .welcome-logo svg {
+            width: 180px;
+            height: 108px;
+        }
+
+        .welcome-logo .brand-name {
+            font-family: 'Comfortaa', cursive;
+            font-size: 2.25rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        #drive-home {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .drive-topbar {
+            min-height: 64px;
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .drive-brand {
+            font-family: 'Comfortaa', cursive;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .drive-brand svg {
+            width: 32px;
+            height: 24px;
+            flex: 0 0 auto;
+        }
+
+        .drive-brand span {
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        .drive-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .drive-btn {
+            min-height: 44px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.16s, transform 0.16s, box-shadow 0.16s;
+        }
+
+        .drive-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .drive-btn-primary {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .drive-btn-primary:hover:not(:disabled) {
+            background: #333333;
+        }
+
+        .drive-btn-secondary {
+            background: rgba(0,0,0,0.05);
+            color: #1a1a1a;
+        }
+
+        .drive-btn-secondary:hover:not(:disabled) {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .drive-icon-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+        }
+
+        .drive-profile {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .drive-profile-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: white;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .drive-profile-btn:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            transform: translateY(-1px);
+        }
+
+        .drive-profile-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .drive-profile-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 10px);
+            width: min(92vw, 300px);
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1400;
+        }
+
+        .drive-profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .drive-profile-meta .drive-profile-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+        }
+
+        .drive-profile-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .drive-profile-email {
+            font-size: 0.75rem;
+            color: #666666;
+            word-break: break-all;
+        }
+
+        .drive-profile-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .drive-profile-actions .drive-btn {
+            flex: 1;
+        }
+
+        .drive-main {
+            flex: 1;
+            overflow: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 26px;
+        }
+
+        .drive-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .drive-search {
+            min-height: 44px;
+            flex: 1;
+            min-width: min(100%, 260px);
+            border: none;
+            border-radius: 999px;
+            padding: 0 18px;
+            background: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+            color: #1a1a1a;
+            outline: none;
+        }
+
+        .drive-search:focus {
+            box-shadow: inset 0 0 0 2px #7c3aed;
+        }
+
+        .drive-status {
+            min-height: 24px;
+            color: #666666;
+            font-size: 0.88rem;
+            flex: 1 0 100%;
+        }
+
+        #welcome-view .drive-status {
+            flex: 0 0 auto;
+            text-align: center;
+        }
+
+        .drive-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .drive-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .drive-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .drive-recents,
+        .drive-file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .drive-recents {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scroll-snap-type: x proximity;
+        }
+
+        .drive-recents .drive-card {
+            min-width: 176px;
+            flex: 0 0 176px;
+            scroll-snap-align: start;
+        }
+
+        .drive-card {
+            border: none;
+            border-radius: 16px;
+            padding: 12px;
+            min-height: 176px;
+            background: #ffffff;
+            color: #1a1a1a;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+            transition: transform 0.16s, box-shadow 0.16s;
+        }
+
+        .drive-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+        }
+
+        .drive-card-preview {
+            height: 104px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8fafc, #ece7ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7c3aed;
+        }
+
+        .drive-card-title {
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .drive-card-meta {
+            font-size: 0.78rem;
+            color: #666666;
+        }
+
+        .drive-empty {
+            color: #777777;
+            background: rgba(255,255,255,0.65);
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .drive-save-status {
+            margin-left: auto;
+            color: #6b7280;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 720px) {
+            .drive-topbar { padding: 10px 12px; }
+            .drive-brand { gap: 6px; flex: 1 1 auto; }
+            .drive-brand svg { width: 28px; height: 20px; }
+            .drive-actions { gap: 6px; }
+            .drive-btn { min-height: 36px; padding: 8px 10px; font-size: 0.82rem; }
+            .drive-icon-btn { width: 36px; height: 36px; }
+            .drive-main { padding: 16px; gap: 20px; }
+            .drive-file-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+            .drive-recents .drive-card { min-width: 156px; flex-basis: 156px; }
+            .drive-card { min-height: 156px; }
+            .drive-card-preview { height: 88px; }
+        }
+        
         /* --- EXPORT & VISIBILITY UTILITIES --- */
         .export-only { 
             display: none;
@@ -624,6 +986,15 @@
         const PAGE_GAP = 40; // Gap between pages in px
         const DEFAULT_TITLE = "Untitled Exam";
         const QUESTION_TYPES = ['mcq', 'short', 'tf'];
+        const GOOGLE_CLIENT_ID = '435784295430-cmug30o42f1vu4ijgor9sjb0ro4oo37o.apps.googleusercontent.com';
+        const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
+        const DRIVE_TOKEN_KEY = 'drive-token-v1';
+        const DRIVE_REMEMBER_KEY = 'drive-remember-v1';
+        const DRIVE_FOLDER_NAME = 'Wonderxam';
+        const DRIVE_FILE_EXTENSION = '.wonderxam.json';
+        const DRIVE_FILE_MIME = 'application/json';
+        const DRIVE_FIELDS = 'id,name,modifiedTime,createdTime,appProperties,parents';
+        const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='48' fill='%237c3aed'/%3E%3Ccircle cx='48' cy='36' r='16' fill='white' opacity='.92'/%3E%3Cpath d='M20 84c5-18 17-28 28-28s23 10 28 28' fill='white' opacity='.92'/%3E%3C/svg%3E";
         const GRID_POINTS = Array.from({ length: (ROWS + 1) * (COLS + 1) }, (_, i) => ({
             c: i % (COLS + 1),
             r: Math.floor(i / (COLS + 1))
@@ -684,6 +1055,60 @@
             const reader = new FileReader();
             reader.onload = (event) => onLoad(event.target.result);
             reader.readAsDataURL(file);
+        };
+
+        const sanitizeFilename = (name) => {
+            const safe = String(name || DEFAULT_TITLE).trim()
+                .replace(/[\\/:*?"<>|]/g, '-')
+                .replace(/\s+/g, ' ')
+                .slice(0, 120);
+            return safe || DEFAULT_TITLE;
+        };
+
+        const stripWonderxamExtension = (name) => String(name || DEFAULT_TITLE).replace(/\.wonderxam\.json$/i, '');
+
+        const formatDriveDate = (value) => {
+            if (!value) return '';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        };
+
+        const buildExamDocument = (title = DEFAULT_TITLE) => ({
+            title: title || DEFAULT_TITLE,
+            blocks: [],
+            docStyle: { font: FONTS[0].val, size: 100 },
+            driveFileId: null,
+            driveFileName: null,
+            modifiedTime: null
+        });
+
+        const serializeExamDocument = (doc) => ({
+            app: 'wonderxam',
+            version: 1,
+            title: doc.title || DEFAULT_TITLE,
+            docStyle: doc.docStyle || { font: FONTS[0].val, size: 100 },
+            blocks: Array.isArray(doc.blocks) ? doc.blocks : [],
+            savedAt: new Date().toISOString()
+        });
+
+        const parseExamDocument = (payload, file) => {
+            const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            return {
+                title: data?.title || stripWonderxamExtension(file?.name) || DEFAULT_TITLE,
+                blocks: Array.isArray(data?.blocks) ? data.blocks : [],
+                docStyle: data?.docStyle || { font: FONTS[0].val, size: 100 },
+                driveFileId: file?.id || null,
+                driveFileName: file?.name || null,
+                modifiedTime: file?.modifiedTime || data?.savedAt || null
+            };
+        };
+
+        const buildDriveMultipartBody = (metadata, content, mimeType = DRIVE_FILE_MIME) => {
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', new Blob([JSON.stringify(content)], { type: mimeType }));
+            return form;
         };
 
         const CustomSelect = ({ label, value, options, onChange }) => {
@@ -765,6 +1190,258 @@
                     )}
                 </div>
             );
+        };
+
+        const useGoogleDrive = () => {
+            const [ready, setReady] = useState(false);
+            const [signedIn, setSignedIn] = useState(false);
+            const [profile, setProfile] = useState(null);
+            const [files, setFiles] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [status, setStatus] = useState('Sign in to browse your Drive.');
+            const tokenClientRef = useRef(null);
+            const tokenRef = useRef({ accessToken: null, expiry: 0 });
+            const folderIdRef = useRef(null);
+
+            const saveToken = useCallback((accessToken, expiry) => {
+                tokenRef.current = { accessToken, expiry };
+                try {
+                    localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify({
+                        token: accessToken,
+                        expiry,
+                        grantedScopes: DRIVE_SCOPE
+                    }));
+                    localStorage.setItem(DRIVE_REMEMBER_KEY, '1');
+                } catch (err) {}
+                setSignedIn(true);
+            }, []);
+
+            const loadStoredToken = useCallback(() => {
+                try {
+                    const raw = localStorage.getItem(DRIVE_TOKEN_KEY);
+                    if (!raw) return false;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed?.token || !parsed?.expiry || Date.now() > parsed.expiry - 60000) return false;
+                    tokenRef.current = { accessToken: parsed.token, expiry: parsed.expiry };
+                    setSignedIn(true);
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            }, []);
+
+            useEffect(() => {
+                const init = () => {
+                    if (!window.google?.accounts?.oauth2) {
+                        setTimeout(init, 150);
+                        return;
+                    }
+                    tokenClientRef.current = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: DRIVE_SCOPE,
+                        include_granted_scopes: true,
+                        callback: () => {},
+                        error_callback: (err) => {
+                            console.warn('Google sign-in failed:', err);
+                            setStatus('Google sign-in failed. Try again.');
+                        }
+                    });
+                    setReady(true);
+                    loadStoredToken();
+                };
+                init();
+            }, [loadStoredToken]);
+
+            const requestToken = useCallback((interactive = false) => {
+                if (tokenRef.current.accessToken && Date.now() < tokenRef.current.expiry - 60000) {
+                    return Promise.resolve(tokenRef.current.accessToken);
+                }
+                if (!tokenClientRef.current) {
+                    return Promise.reject(new Error('Google Drive auth is not ready.'));
+                }
+                return new Promise((resolve, reject) => {
+                    tokenClientRef.current.callback = (resp) => {
+                        if (resp?.error) {
+                            reject(new Error(resp.error));
+                            return;
+                        }
+                        const expiry = Date.now() + (resp.expires_in || 3600) * 1000;
+                        saveToken(resp.access_token, expiry);
+                        resolve(resp.access_token);
+                    };
+                    tokenClientRef.current.requestAccessToken({
+                        prompt: interactive ? 'consent' : '',
+                        scope: DRIVE_SCOPE,
+                        include_granted_scopes: true
+                    });
+                });
+            }, [saveToken]);
+
+            const driveFetch = useCallback(async (url, options = {}, retried = false) => {
+                const token = await requestToken(false);
+                const headers = new Headers(options.headers || {});
+                headers.set('Authorization', `Bearer ${token}`);
+                const res = await fetch(url, { ...options, headers });
+                if (res.status === 401 && !retried) {
+                    tokenRef.current = { accessToken: null, expiry: 0 };
+                    await requestToken(false);
+                    return driveFetch(url, options, true);
+                }
+                if (!res.ok) {
+                    const text = await res.text().catch(() => '');
+                    throw new Error(`Drive API error ${res.status}: ${text}`);
+                }
+                return res;
+            }, [requestToken]);
+
+            const loadProfile = useCallback(async () => {
+                const res = await driveFetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink)');
+                const data = await res.json();
+                const user = data.user || {};
+                const nextProfile = {
+                    name: user.displayName || 'Signed in',
+                    email: user.emailAddress || '',
+                    photo: user.photoLink || DEFAULT_AVATAR
+                };
+                setProfile(nextProfile);
+                try { localStorage.setItem('drive-hint-email', nextProfile.email || ''); } catch (err) {}
+                return nextProfile;
+            }, [driveFetch]);
+
+            const ensureDriveFolder = useCallback(async () => {
+                if (folderIdRef.current) return folderIdRef.current;
+                const query = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+                const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&pageSize=1`);
+                const data = await res.json();
+                if (data.files?.[0]?.id) {
+                    folderIdRef.current = data.files[0].id;
+                    return folderIdRef.current;
+                }
+                const createRes = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: DRIVE_FOLDER_NAME,
+                        mimeType: 'application/vnd.google-apps.folder'
+                    })
+                });
+                const created = await createRes.json();
+                folderIdRef.current = created.id;
+                return folderIdRef.current;
+            }, [driveFetch]);
+
+            const refreshFiles = useCallback(async (search = '') => {
+                if (!tokenRef.current.accessToken) return;
+                setLoading(true);
+                setStatus('Loading your Drive...');
+                try {
+                    await loadProfile();
+                    const folderId = await ensureDriveFolder();
+                    const queryParts = [
+                        `'${folderId}' in parents`,
+                        'trashed=false',
+                        `mimeType='${DRIVE_FILE_MIME}'`
+                    ];
+                    if (search.trim()) {
+                        queryParts.push(`name contains '${search.trim().replace(/'/g, "\\'")}'`);
+                    }
+                    const q = encodeURIComponent(queryParts.join(' and '));
+                    const fields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
+                    const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=${fields}`);
+                    const data = await res.json();
+                    const wonderxamFiles = (data.files || []).filter(file => /\.wonderxam\.json$/i.test(file.name || ''));
+                    setFiles(wonderxamFiles);
+                    setStatus(wonderxamFiles.length ? `${wonderxamFiles.length} exam${wonderxamFiles.length === 1 ? '' : 's'} in Drive.` : 'No Wonderxam exams in Drive yet.');
+                } catch (err) {
+                    console.error(err);
+                    setStatus('Unable to load Drive files.');
+                } finally {
+                    setLoading(false);
+                }
+            }, [driveFetch, ensureDriveFolder, loadProfile]);
+
+            const signIn = useCallback(async () => {
+                setStatus('Waiting for Google sign-in...');
+                await requestToken(true);
+                await loadProfile();
+                await refreshFiles();
+            }, [loadProfile, refreshFiles, requestToken]);
+
+            const signOut = useCallback(() => {
+                const token = tokenRef.current.accessToken;
+                if (token && window.google?.accounts?.oauth2?.revoke) {
+                    google.accounts.oauth2.revoke(token, () => {});
+                }
+                tokenRef.current = { accessToken: null, expiry: 0 };
+                folderIdRef.current = null;
+                setSignedIn(false);
+                setProfile(null);
+                setFiles([]);
+                setStatus('Sign in to browse your Drive.');
+                try {
+                    localStorage.removeItem(DRIVE_TOKEN_KEY);
+                    localStorage.removeItem(DRIVE_REMEMBER_KEY);
+                    localStorage.removeItem('drive-hint-email');
+                } catch (err) {}
+            }, []);
+
+            const openExam = useCallback(async (file) => {
+                if (!file?.id) return null;
+                setStatus('Opening exam...');
+                const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`);
+                const payload = await res.text();
+                setStatus('Exam opened.');
+                return parseExamDocument(payload, file);
+            }, [driveFetch]);
+
+            const saveExam = useCallback(async (doc) => {
+                await requestToken(false);
+                const folderId = await ensureDriveFolder();
+                const title = sanitizeFilename(doc.title || DEFAULT_TITLE);
+                const fileName = `${title}${DRIVE_FILE_EXTENSION}`;
+                const content = serializeExamDocument(doc);
+                const metadata = {
+                    name: fileName,
+                    mimeType: DRIVE_FILE_MIME,
+                    appProperties: { wonderxam: 'exam' },
+                    parents: doc.driveFileId ? undefined : [folderId]
+                };
+                const body = buildDriveMultipartBody(metadata, content);
+                const url = doc.driveFileId
+                    ? `https://www.googleapis.com/upload/drive/v3/files/${doc.driveFileId}?uploadType=multipart&fields=${encodeURIComponent(DRIVE_FIELDS)}`
+                    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=${encodeURIComponent(DRIVE_FIELDS)}`;
+                const res = await driveFetch(url, {
+                    method: doc.driveFileId ? 'PATCH' : 'POST',
+                    body
+                });
+                const saved = await res.json();
+                return {
+                    ...doc,
+                    driveFileId: saved.id || doc.driveFileId,
+                    driveFileName: saved.name || fileName,
+                    modifiedTime: saved.modifiedTime || new Date().toISOString()
+                };
+            }, [driveFetch, ensureDriveFolder, requestToken]);
+
+            useEffect(() => {
+                if (ready && signedIn) {
+                    refreshFiles();
+                }
+            }, [ready, signedIn, refreshFiles]);
+
+            return {
+                ready,
+                signedIn,
+                profile,
+                files,
+                loading,
+                status,
+                signIn,
+                signOut,
+                refreshFiles,
+                openExam,
+                saveExam
+            };
         };
 
         const GridLayer = React.memo(({ blocks, pageIndex, draggingBlockId }) => {
@@ -989,16 +1666,24 @@
             }
         };
 
-        const ExamEditor = ({ initialTitle }) => {
-            const [blocks, setBlocks] = useState([]);
-            const [docStyle, setDocStyle] = useState({ font: FONTS[0].val, size: 100 });
+        const ExamEditor = ({ initialDocument, onDocumentChange, onBack, saveStatus }) => {
+            const [blocks, setBlocks] = useState(() => initialDocument?.blocks || []);
+            const [docStyle, setDocStyle] = useState(() => initialDocument?.docStyle || { font: FONTS[0].val, size: 100 });
             const [zoom, setZoom] = useState(1);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [exporting, setExporting] = useState(false);
-            const [title, setTitle] = useState(initialTitle || DEFAULT_TITLE);
+            const [title, setTitle] = useState(() => initialDocument?.title || DEFAULT_TITLE);
             const [overflowMap, setOverflowMap] = useState({});
 
             const containerRef = useRef(null);
+            const onDocumentChangeRef = useRef(onDocumentChange);
+            useEffect(() => {
+                onDocumentChangeRef.current = onDocumentChange;
+            }, [onDocumentChange]);
+
+            useEffect(() => {
+                onDocumentChangeRef.current?.({ title, blocks, docStyle });
+            }, [title, blocks, docStyle]);
             
             const [drag, setDrag] = useState({ 
                 active: false, 
@@ -1355,7 +2040,11 @@
                 <div className={`app-shell ${exporting?'exporting':''}`}>
                     <div className="main-area">
                         <div className="top-bar">
+                            <button className="drive-btn drive-btn-secondary drive-icon-btn mr-3 no-export" onClick={onBack} title="Drive home" aria-label="Drive home">
+                                <MatIcon name="folder" />
+                            </button>
                             <input className="doc-title" value={title} onChange={e=>setTitle(e.target.value)} />
+                            <div className="drive-save-status no-export">{saveStatus}</div>
                         </div>
                         
                         <div className="viewport" ref={containerRef}>
@@ -1500,44 +2189,138 @@
             );
         };
 
-        const HomeScreen = ({ onStart }) => {
+        const DriveLogo = ({ name = "Wonderxam" }) => (
+            <div className="drive-brand">
+                <svg viewBox="0 0 40 24" fill="none" aria-hidden="true">
+                    <path d="M4 22 L20 6 L36 22" stroke="#E07A3C" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+                <span className="brand-name">{name}</span>
+            </div>
+        );
+
+        const ProfileMenu = ({ profile, onRefresh, onSignOut }) => {
+            const [open, setOpen] = useState(false);
+            return (
+                <div className="drive-profile">
+                    <button className="drive-profile-btn" type="button" aria-label="Account menu" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+                        <img className="drive-profile-avatar" src={profile?.photo || DEFAULT_AVATAR} alt="Profile" />
+                    </button>
+                    {open && (
+                        <div className="drive-profile-menu" role="menu">
+                            <div className="drive-profile-meta">
+                                <img className="drive-profile-avatar" src={profile?.photo || DEFAULT_AVATAR} alt="Profile" />
+                                <div>
+                                    <div className="drive-profile-name">{profile?.name || 'Signed in'}</div>
+                                    <div className="drive-profile-email">{profile?.email || ''}</div>
+                                </div>
+                            </div>
+                            <div className="drive-profile-actions">
+                                <button className="drive-btn drive-btn-secondary" type="button" onClick={() => { setOpen(false); onRefresh(); }}>Refresh</button>
+                                <button className="drive-btn drive-btn-secondary" type="button" onClick={onSignOut}>Sign out</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const DriveCard = ({ file, onOpen }) => (
+            <button className="drive-card" type="button" onClick={() => onOpen(file)}>
+                <div className="drive-card-preview">
+                    <MatIcon name="description" className="text-[42px]" />
+                </div>
+                <div>
+                    <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
+                    <div className="drive-card-meta">{formatDriveDate(file.modifiedTime) || 'Wonderxam exam'}</div>
+                </div>
+            </button>
+        );
+
+        const WelcomeScreen = ({ ready, status, onSignIn }) => (
+            <div id="welcome-view">
+                <div className="welcome-logo">
+                    <svg viewBox="0 0 40 24" fill="none" aria-hidden="true">
+                        <path d="M4 22 L20 6 L36 22" stroke="#E07A3C" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                    <span className="brand-name">Wonderxam</span>
+                </div>
+                <button className="drive-btn drive-btn-primary" type="button" disabled={!ready} onClick={onSignIn}>
+                    {ready ? 'Sign in with Google' : 'Loading Google...'}
+                </button>
+                <div className="drive-status text-center">{status}</div>
+            </div>
+        );
+
+        const DriveHome = ({ drive, onCreate, onOpen }) => {
             const [showModal, setShowModal] = useState(false);
             const [examName, setExamName] = useState('');
-            const [isExiting, setIsExiting] = useState(false);
+            const [search, setSearch] = useState('');
 
             const handleCreate = () => {
-                setIsExiting(true);
-                
-                setTimeout(() => {
-                    if (examName.trim()) {
-                        onStart(examName);
-                    } else {
-                        onStart(DEFAULT_TITLE);
-                    }
-                }, 400);
+                onCreate(examName.trim() || DEFAULT_TITLE);
+                setShowModal(false);
+                setExamName('');
             };
 
-            return (
-                <div id="homeScreen" className={isExiting ? 'exit-anim' : ''}>
-                    <div className="texture-layer"></div>
-                    <div id="bg-light-caster"></div>
+            const filteredFiles = useMemo(() => {
+                const term = search.trim().toLowerCase();
+                if (!term) return drive.files;
+                return drive.files.filter(file => stripWonderxamExtension(file.name).toLowerCase().includes(term));
+            }, [drive.files, search]);
 
-                    <div className="home-content">
-                        <span className="material-symbols-rounded home-icon">school</span>
-                        <h1 className="home-title">Wonderxam</h1>
-                        <p className="home-sub">Create, Edit & Export Exams</p>
-                        
-                        <button className="btn-home" onClick={() => setShowModal(true)}>
-                            <span className="material-symbols-rounded">add</span>
-                            New Exam
-                        </button>
+            const recentFiles = filteredFiles.slice(0, 8);
+
+            return (
+                <div id="drive-home">
+                    <div className="drive-topbar">
+                        <DriveLogo />
+                        <div className="drive-actions">
+                            <button className="drive-btn drive-btn-primary" type="button" onClick={() => setShowModal(true)}>New Exam</button>
+                            <ProfileMenu profile={drive.profile} onRefresh={() => drive.refreshFiles(search)} onSignOut={drive.signOut} />
+                        </div>
                     </div>
 
-                    <div className="inhouse-badge">
-                        <svg viewBox="0 0 100 60">
-                            <path d="M5 55 L50 10 L95 55" />
-                        </svg>
-                        <span>inhouse software</span>
+                    <div className="drive-main">
+                        <div className="drive-toolbar">
+                            <button className="drive-btn drive-btn-secondary drive-icon-btn" type="button" title="Refresh" aria-label="Refresh" onClick={() => drive.refreshFiles(search)}>
+                                <MatIcon name="refresh" />
+                            </button>
+                            <input
+                                className="drive-search"
+                                type="text"
+                                placeholder="Search exams..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && drive.refreshFiles(search)}
+                            />
+                            <div className="drive-status">{drive.status}</div>
+                        </div>
+
+                        <section className="drive-section">
+                            <div className="drive-section-header">
+                                <div className="drive-section-title">Recents</div>
+                            </div>
+                            {recentFiles.length ? (
+                                <div className="drive-recents">
+                                    {recentFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} />)}
+                                </div>
+                            ) : (
+                                <div className="drive-empty">{drive.loading ? 'Loading exams...' : 'No recent exams yet.'}</div>
+                            )}
+                        </section>
+
+                        <section className="drive-section">
+                            <div className="drive-section-header">
+                                <div className="drive-section-title">My Drive</div>
+                            </div>
+                            {filteredFiles.length ? (
+                                <div className="drive-file-grid">
+                                    {filteredFiles.map(file => <DriveCard key={file.id} file={file} onOpen={onOpen} />)}
+                                </div>
+                            ) : (
+                                <div className="drive-empty">{drive.loading ? 'Loading exams...' : 'No Wonderxam exams found in Drive.'}</div>
+                            )}
+                        </section>
                     </div>
 
                     {showModal && (
@@ -1568,16 +2351,116 @@
         };
 
         function App() {
+            const drive = useGoogleDrive();
             const [view, setView] = useState('home');
-            const [initialTitle, setInitialTitle] = useState(DEFAULT_TITLE);
+            const [currentDocument, setCurrentDocument] = useState(() => buildExamDocument());
+            const [saveStatus, setSaveStatus] = useState('');
+            const [documentKey, setDocumentKey] = useState(0);
+            const saveTimerRef = useRef(null);
+            const latestDocumentRef = useRef(currentDocument);
+            const savingRef = useRef(false);
+
+            useEffect(() => {
+                latestDocumentRef.current = currentDocument;
+            }, [currentDocument]);
+
+            const persistCurrentDocument = useCallback(async () => {
+                if (!drive.signedIn) return;
+                if (savingRef.current) {
+                    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                    saveTimerRef.current = setTimeout(() => persistCurrentDocument(), 1000);
+                    return;
+                }
+                savingRef.current = true;
+                setSaveStatus('Saving to Drive...');
+                try {
+                    const saved = await drive.saveExam(latestDocumentRef.current);
+                    setCurrentDocument(prev => ({
+                        ...prev,
+                        driveFileId: saved.driveFileId,
+                        driveFileName: saved.driveFileName,
+                        modifiedTime: saved.modifiedTime
+                    }));
+                    setSaveStatus('Saved to Drive');
+                } catch (err) {
+                    console.error(err);
+                    setSaveStatus('Drive save failed');
+                } finally {
+                    savingRef.current = false;
+                }
+            }, [drive]);
+
+            const scheduleDriveSave = useCallback(() => {
+                if (!drive.signedIn || view !== 'editor') return;
+                if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                setSaveStatus('Unsaved changes');
+                saveTimerRef.current = setTimeout(() => {
+                    persistCurrentDocument();
+                }, 900);
+            }, [drive.signedIn, persistCurrentDocument, view]);
+
+            const handleDocumentChange = useCallback((partial) => {
+                setCurrentDocument(prev => {
+                    const next = { ...prev, ...partial };
+                    latestDocumentRef.current = next;
+                    return next;
+                });
+                scheduleDriveSave();
+            }, [scheduleDriveSave]);
+
+            const createExam = useCallback((name) => {
+                if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                const next = buildExamDocument(name);
+                setCurrentDocument(next);
+                latestDocumentRef.current = next;
+                setSaveStatus('Unsaved changes');
+                setDocumentKey(k => k + 1);
+                setView('editor');
+            }, []);
+
+            const openExam = useCallback(async (file) => {
+                try {
+                    const doc = await drive.openExam(file);
+                    if (!doc) return;
+                    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                    setCurrentDocument(doc);
+                    latestDocumentRef.current = doc;
+                    setSaveStatus('Saved to Drive');
+                    setDocumentKey(k => k + 1);
+                    setView('editor');
+                } catch (err) {
+                    console.error(err);
+                    setSaveStatus('Unable to open exam');
+                }
+            }, [drive]);
+
+            const goHome = useCallback(() => {
+                if (saveTimerRef.current) {
+                    clearTimeout(saveTimerRef.current);
+                    saveTimerRef.current = null;
+                    persistCurrentDocument();
+                }
+                drive.refreshFiles();
+                setView('home');
+            }, [drive, persistCurrentDocument]);
+
+            if (!drive.signedIn) {
+                return <WelcomeScreen ready={drive.ready} status={drive.status} onSignIn={drive.signIn} />;
+            }
 
             if (view === 'home') {
-                return <HomeScreen onStart={(name) => {
-                    setInitialTitle(name);
-                    setView('editor');
-                }} />;
+                return <DriveHome drive={drive} onCreate={createExam} onOpen={openExam} />;
             }
-            return <ExamEditor initialTitle={initialTitle} />;
+
+            return (
+                <ExamEditor
+                    key={documentKey}
+                    initialDocument={currentDocument}
+                    onDocumentChange={handleDocumentChange}
+                    onBack={goHome}
+                    saveStatus={saveStatus}
+                />
+            );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
