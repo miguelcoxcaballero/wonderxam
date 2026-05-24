@@ -2166,11 +2166,16 @@
 
             const containerRef = useRef(null);
             const onDocumentChangeRef = useRef(onDocumentChange);
+            const isMountedRef = useRef(false);
             useEffect(() => {
                 onDocumentChangeRef.current = onDocumentChange;
             }, [onDocumentChange]);
 
             useEffect(() => {
+                if (!isMountedRef.current) {
+                    isMountedRef.current = true;
+                    return;
+                }
                 onDocumentChangeRef.current?.({ title, blocks, docStyle });
             }, [title, blocks, docStyle]);
             
