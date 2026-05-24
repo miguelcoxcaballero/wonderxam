@@ -748,6 +748,22 @@
             margin-bottom: 18px;
         }
 
+        .drive-recents {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-snap-type: x proximity;
+            scrollbar-width: thin;
+            scrollbar-color: #dadce0 transparent;
+        }
+
+        .drive-recents .drive-card {
+            min-width: 200px;
+            flex: 0 0 200px;
+            scroll-snap-align: start;
+        }
+
         .drive-folder-card {
             background: white;
             border-radius: 12px;
@@ -781,34 +797,24 @@
             flex: 0 0 auto;
         }
 
-        .drive-recents {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-        }
-
 
         .drive-card {
-            position: relative;
-            border: none;
+            background: white;
             border-radius: 14px;
-            padding: 10px;
-            min-height: 128px;
-            background: #ffffff;
-            color: #1a1a1a;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+            padding: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            position: relative;
             text-align: left;
-            text-decoration: none;
-            transition: transform 0.16s, box-shadow 0.16s;
+            transition: box-shadow 0.18s ease;
         }
 
         .drive-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.09);
         }
 
         .drive-card.drag-over {
@@ -820,34 +826,38 @@
         .drive-card[draggable="true"]:active { cursor: grabbing; }
 
         .drive-card-preview {
+            width: 100%;
             aspect-ratio: 4 / 3;
             border-radius: 10px;
             background: rgba(0,0,0,0.035);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #7c3aed;
+            color: rgba(0,0,0,0.4);
             overflow: hidden;
         }
 
-        .drive-card.folder .drive-card-preview {
-            background: rgba(217,119,54,0.1);
-            color: #d97736;
+        .drive-card-icon {
+            width: 40px;
+            height: 40px;
+            color: rgba(0,0,0,0.4);
         }
 
         .drive-card-title {
-            padding-right: 28px;
             font-weight: 600;
             font-size: 0.84rem;
-            line-height: 1.3;
+            color: #1a1a1a;
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1.3;
+            padding-right: 34px;
         }
 
         .drive-card-meta {
             font-size: 0.72rem;
             color: #888;
+            opacity: 0.85;
         }
 
         .drive-card-menu {
@@ -1188,7 +1198,8 @@
             .drive-btn { min-height: 36px; padding: 8px 10px; font-size: 0.82rem; }
             .drive-icon-btn { width: 36px; height: 36px; }
             .drive-main { padding: 16px 16px 72px; }
-            .drive-folder-grid, .drive-file-grid, .drive-recents { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+            .drive-folder-grid, .drive-file-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+            .drive-recents .drive-card { min-width: 160px; flex-basis: 160px; }
             .drive-fab-wrap { right: 16px; bottom: 16px; }
             .drive-fab { width: 56px; height: 56px; border-radius: 16px; }
         }
@@ -2881,12 +2892,14 @@
                 onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.stopPropagation(); onDragStart?.(file); }}
                 onDragEnd={() => onDragStart?.(null)}
             >
+                <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
                 <div className="drive-card-preview">
-                    <MatIcon name="description" className="text-[42px]" />
-                </div>
-                <div>
-                    <div className="drive-card-title">{stripWonderxamExtension(file.name)}</div>
-                    <div className="drive-card-meta">{formatDriveDate(file.modifiedTime) || 'Wonderxam exam'}</div>
+                    <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="8" y1="13" x2="16" y2="13"/>
+                        <line x1="8" y1="17" x2="13" y2="17"/>
+                    </svg>
                 </div>
                 <DriveItemMenu item={file} type="file" onDelete={onDelete} onMove={onMove} />
             </div>
