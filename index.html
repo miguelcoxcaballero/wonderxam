@@ -3164,9 +3164,9 @@
                                 onError={() => setImgError(true)} 
                             />
                         ) : (
-                            <svg className="drive-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                <path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
-                                <path d="M14 2v4h4"/>
+                            <svg className="drive-card-icon" viewBox="0 0 24 24">
+                                <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points="14 2 14 8 20 8"/>
                             </svg>
                         )}
                     </div>
@@ -3713,8 +3713,7 @@
                 savingRef.current = true;
                 setSaveStatus('Saving to Drive...');
                 try {
-                    const pdfBlob = await generateFullPDFBlob(latestDocumentRef.current);
-                    const saved = await drive.saveExam(latestDocumentRef.current, pdfBlob);
+                    const saved = await drive.saveExam(latestDocumentRef.current);
                     setCurrentDocument(prev => ({
                         ...prev,
                         driveFileId: saved.driveFileId,
@@ -3774,14 +3773,18 @@
                 }
             }, [drive]);
 
-            const goHome = useCallback(async () => {
+            const goHome = useCallback(() => {
+                const hasPendingChange = !!saveTimerRef.current;
                 if (saveTimerRef.current) {
                     clearTimeout(saveTimerRef.current);
                     saveTimerRef.current = null;
-                    await persistCurrentDocument();
                 }
-                drive.refreshFiles();
                 setView('home');
+                if (hasPendingChange) {
+                    persistCurrentDocument().then(() => drive.refreshFiles());
+                } else {
+                    drive.refreshFiles();
+                }
             }, [drive, persistCurrentDocument]);
 
             if (!drive.signedIn) {
