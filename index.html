@@ -1448,57 +1448,93 @@
             return pdf.output('blob');
         };
 
+        const captureClonedPages = async (sourcePages, options = {}) => {
+            // Build an off-screen container that holds clones of the pages.
+            // The `.exporting` class is applied here (NOT on .app-shell), so the
+            // visible UI is never restyled — no flash, no "screenshot" effect.
+            const container = document.createElement('div');
+            container.className = 'exporting';
+            container.style.cssText = [
+                'position: fixed',
+                'left: -100000px',
+                'top: 0',
+                'pointer-events: none',
+                'z-index: -1',
+                'background: #ffffff',
+                'display: block'
+            ].join(';');
+
+            // Copy values from inputs/textareas because cloneNode does NOT
+            // preserve current user-typed values for form elements.
+            const syncFormValues = (src, dst) => {
+                const srcInputs = src.querySelectorAll('input, textarea');
+                const dstInputs = dst.querySelectorAll('input, textarea');
+                for (let i = 0; i < srcInputs.length && i < dstInputs.length; i++) {
+                    if (dstInputs[i].tagName === 'TEXTAREA') {
+                        dstInputs[i].textContent = srcInputs[i].value;
+                    } else {
+                        dstInputs[i].setAttribute('value', srcInputs[i].value);
+                        dstInputs[i].value = srcInputs[i].value;
+                    }
+                }
+            };
+
+            const pageClones = [];
+            sourcePages.forEach(page => {
+                const clone = page.cloneNode(true);
+                clone.style.transform = 'none';
+                clone.style.margin = '0 0 24px 0';
+                clone.style.position = 'static';
+                syncFormValues(page, clone);
+                container.appendChild(clone);
+                pageClones.push(clone);
+            });
+
+            document.body.appendChild(container);
+            // Allow the browser a tick to apply layout/styles to the clones.
+            await new Promise(r => setTimeout(r, 50));
+
+            try {
+                const canvases = [];
+                for (const clone of pageClones) {
+                    const cvs = await html2canvas(clone, {
+                        scale: options.scale || 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+                    canvases.push(cvs);
+                }
+                return canvases;
+            } finally {
+                container.remove();
+            }
+        };
+
         const generateFullPDFBlob = async (doc) => {
             const pages = document.querySelectorAll('.a4-page');
             if (!pages.length) {
                 return generateLightweightPDF(doc);
             }
-            
-            const appShell = document.querySelector('.app-shell');
-            const wasExporting = appShell?.classList.contains('exporting');
-            if (appShell && !wasExporting) {
-                appShell.classList.add('exporting');
-            }
-            
-            const scaleWrapper = document.querySelector('.pages-scale-wrapper');
-            const originalTransform = scaleWrapper ? scaleWrapper.style.transform : '';
-            if (scaleWrapper) {
-                scaleWrapper.style.transform = 'scale(1)';
-            }
-            
-            await new Promise(r => setTimeout(r, 100));
-            
-            try {
-                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-                for (let i = 0; i < pages.length; i++) {
-                    const cvs = await html2canvas(pages[i], {
-                        scale: 2,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        logging: false
-                    });
-                    if (i > 0) pdf.addPage();
-                    pdf.addImage(cvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
-                }
-                
-                const jsonStr = JSON.stringify(serializeExamDocument(doc));
-                const base64Data = base64EncodeUTF8(jsonStr);
-                
-                pdf.setProperties({
-                    title: doc.title || DEFAULT_TITLE,
-                    subject: base64Data,
-                    keywords: 'wonderxam-exam-data'
-                });
-                
-                return pdf.output('blob');
-            } finally {
-                if (scaleWrapper) {
-                    scaleWrapper.style.transform = originalTransform;
-                }
-                if (appShell && !wasExporting) {
-                    appShell.classList.remove('exporting');
-                }
-            }
+
+            const canvases = await captureClonedPages(pages, { scale: 2 });
+
+            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            canvases.forEach((cvs, i) => {
+                if (i > 0) pdf.addPage();
+                pdf.addImage(cvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+            });
+
+            const jsonStr = JSON.stringify(serializeExamDocument(doc));
+            const base64Data = base64EncodeUTF8(jsonStr);
+
+            pdf.setProperties({
+                title: doc.title || DEFAULT_TITLE,
+                subject: base64Data,
+                keywords: 'wonderxam-exam-data'
+            });
+
+            return pdf.output('blob');
         };
         const DRIVE_FOLDER_COLORS = [
             '#f83a22', '#fa573c', '#d06b64', '#ac725e',
@@ -2058,56 +2094,29 @@
                     parents: doc.driveFileId ? undefined : [activeFolderId]
                 };
                 
-                // If a full rendered pdfBlob is provided, extract custom thumbnail!
+                // If a full rendered pdfBlob is provided, extract custom thumbnail
+                // using an off-screen clone (no visible flash).
                 if (pdfBlob) {
                     try {
                         const firstPage = document.querySelector('.a4-page');
                         if (firstPage) {
-                            const appShell = document.querySelector('.app-shell');
-                            const wasExporting = appShell?.classList.contains('exporting');
-                            if (appShell && !wasExporting) {
-                                appShell.classList.add('exporting');
-                            }
-                            
-                            const scaleWrapper = document.querySelector('.pages-scale-wrapper');
-                            const originalTransform = scaleWrapper ? scaleWrapper.style.transform : '';
-                            if (scaleWrapper) {
-                                scaleWrapper.style.transform = 'scale(1)';
-                            }
-                            
-                            await new Promise(r => setTimeout(r, 100));
-                            
-                            try {
-                                const cvs = await html2canvas(firstPage, {
-                                    scale: 1.5,
-                                    useCORS: true,
-                                    backgroundColor: '#ffffff',
-                                    logging: false
-                                });
-                                const croppedCvs = document.createElement('canvas');
-                                croppedCvs.width = cvs.width;
-                                croppedCvs.height = cvs.height * 0.55;
-                                const ctx = croppedCvs.getContext('2d');
-                                ctx.drawImage(cvs, 0, 0);
-                                
-                                const imgData = croppedCvs.toDataURL('image/jpeg', 0.8);
-                                const base64 = imgData.split(',')[1];
-                                const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                                
-                                metadata.contentHints = {
-                                    thumbnail: {
-                                        image: base64Url,
-                                        mimeType: 'image/jpeg'
-                                    }
-                                };
-                            } finally {
-                                if (scaleWrapper) {
-                                    scaleWrapper.style.transform = originalTransform;
+                            const [cvs] = await captureClonedPages([firstPage], { scale: 1.5 });
+                            const croppedCvs = document.createElement('canvas');
+                            croppedCvs.width = cvs.width;
+                            croppedCvs.height = cvs.height * 0.55;
+                            const ctx = croppedCvs.getContext('2d');
+                            ctx.drawImage(cvs, 0, 0);
+
+                            const imgData = croppedCvs.toDataURL('image/jpeg', 0.8);
+                            const base64 = imgData.split(',')[1];
+                            const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+                            metadata.contentHints = {
+                                thumbnail: {
+                                    image: base64Url,
+                                    mimeType: 'image/jpeg'
                                 }
-                                if (appShell && !wasExporting) {
-                                    appShell.classList.remove('exporting');
-                                }
-                            }
+                            };
                         }
                     } catch (err) {
                         console.error('Failed to generate custom thumbnail:', err);
@@ -3713,7 +3722,8 @@
                 savingRef.current = true;
                 setSaveStatus('Saving to Drive...');
                 try {
-                    const saved = await drive.saveExam(latestDocumentRef.current);
+                    const pdfBlob = await generateFullPDFBlob(latestDocumentRef.current);
+                    const saved = await drive.saveExam(latestDocumentRef.current, pdfBlob);
                     setCurrentDocument(prev => ({
                         ...prev,
                         driveFileId: saved.driveFileId,
