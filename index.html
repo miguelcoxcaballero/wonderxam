@@ -1783,6 +1783,8 @@
                     }
                     const folderQuery = encodeURIComponent([...baseParts, `mimeType='application/vnd.google-apps.folder'`].join(' and '));
                     const fileQuery = encodeURIComponent([...baseParts, `mimeType='${DRIVE_FILE_MIME}'`].join(' and '));
+                    const folderFields = encodeURIComponent('files(id,name,mimeType,modifiedTime,createdTime,parents,folderColorRgb)');
+                    const fileFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
                     const globalQuery = encodeURIComponent(`mimeType='${DRIVE_FILE_MIME}' and trashed=false`);
                     const globalFields = encodeURIComponent(`files(${DRIVE_FIELDS})`);
                     const [folderRes, fileRes, globalRes] = await Promise.all([
