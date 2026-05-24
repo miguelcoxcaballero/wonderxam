@@ -624,16 +624,17 @@
             position: absolute;
             right: 0;
             top: calc(100% + 10px);
+            min-width: 240px;
             width: min(92vw, 300px);
             background: #ffffff;
             border-radius: 16px;
             padding: 14px;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.08);
             border: 1px solid rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
             gap: 12px;
-            z-index: 1400;
+            z-index: 2000;
         }
 
         .drive-profile-meta {
@@ -671,40 +672,43 @@
         .drive-main {
             flex: 1;
             overflow: auto;
-            padding: 24px;
+            padding: 28px 32px 80px;
             display: flex;
             flex-direction: column;
-            gap: 26px;
+            width: 100%;
+            max-width: 1080px;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
 
         .drive-toolbar {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
             flex-wrap: wrap;
+            margin-bottom: 28px;
         }
 
         .drive-search {
-            min-height: 44px;
+            height: 42px;
             flex: 1;
-            min-width: min(100%, 260px);
+            min-width: min(100%, 240px);
             border: none;
-            border-radius: 999px;
-            padding: 0 18px;
-            background: #ffffff;
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+            border-radius: 10px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.04);
             color: #1a1a1a;
             outline: none;
+            font-size: 0.9rem;
         }
 
         .drive-search:focus {
-            box-shadow: inset 0 0 0 2px #7c3aed;
+            box-shadow: 0 0 0 2px #7c3aed;
         }
 
         .drive-status {
-            min-height: 24px;
-            color: #666666;
-            font-size: 0.88rem;
+            font-size: 0.78rem;
+            color: #888;
             flex: 1 0 100%;
         }
 
@@ -716,7 +720,7 @@
         .drive-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            margin-bottom: 32px;
         }
 
         .drive-section-header {
@@ -724,46 +728,52 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
+            margin-bottom: 14px;
         }
 
         .drive-section-title {
-            font-size: 1.05rem;
+            font-size: 0.72rem;
             font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
         }
 
         .drive-recents,
         .drive-file-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
         }
 
         .drive-recents {
             display: flex;
             overflow-x: auto;
             padding-bottom: 6px;
-            scroll-snap-type: x proximity;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: thin;
+            scrollbar-color: #dadce0 transparent;
         }
 
         .drive-recents .drive-card {
-            min-width: 176px;
-            flex: 0 0 176px;
+            min-width: 160px;
+            flex: 0 0 160px;
             scroll-snap-align: start;
         }
 
         .drive-card {
             position: relative;
             border: none;
-            border-radius: 16px;
-            padding: 12px;
-            min-height: 176px;
+            border-radius: 14px;
+            padding: 10px;
+            min-height: 128px;
             background: #ffffff;
             color: #1a1a1a;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             text-align: left;
             text-decoration: none;
             transition: transform 0.16s, box-shadow 0.16s;
@@ -771,54 +781,52 @@
 
         .drive-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
 
         .drive-card.drag-over {
-            box-shadow: 0 0 0 3px #7c3aed, 0 4px 30px rgba(124,58,237,0.2);
+            box-shadow: 0 0 0 2px #7c3aed, 0 4px 16px rgba(124,58,237,0.18);
             transform: translateY(-2px) scale(1.02);
         }
 
-        .drive-card[draggable="true"] {
-            cursor: grab;
-        }
-
-        .drive-card[draggable="true"]:active {
-            cursor: grabbing;
-        }
+        .drive-card[draggable="true"] { cursor: grab; }
+        .drive-card[draggable="true"]:active { cursor: grabbing; }
 
         .drive-card-preview {
-            height: 104px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #f8fafc, #ece7ff);
+            aspect-ratio: 4 / 3;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.035);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #7c3aed;
+            overflow: hidden;
         }
 
         .drive-card.folder .drive-card-preview {
-            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            background: rgba(217,119,54,0.1);
             color: #d97736;
         }
 
         .drive-card-title {
-            padding-right: 30px;
-            font-weight: 700;
+            padding-right: 28px;
+            font-weight: 600;
+            font-size: 0.84rem;
+            line-height: 1.3;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .drive-card-meta {
-            font-size: 0.78rem;
-            color: #666666;
+            font-size: 0.72rem;
+            color: #888;
         }
 
         .drive-card-menu {
             position: absolute;
-            right: 10px;
-            bottom: 37px;
+            top: 8px;
+            right: 8px;
             z-index: 4;
         }
 
@@ -826,29 +834,35 @@
             width: 28px;
             height: 28px;
             border: none;
-            border-radius: 999px;
-            background: rgba(0,0,0,0.04);
+            border-radius: 8px;
+            background: transparent;
             color: #555555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: grid;
+            place-items: center;
             cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s;
+        }
+
+        .drive-card:hover .drive-card-more,
+        .drive-card-more:focus {
+            opacity: 1;
         }
 
         .drive-card-more:hover {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.08);
         }
 
         .drive-card-dropdown {
             position: absolute;
             right: 0;
-            bottom: calc(100% + 8px);
+            top: calc(100% + 4px);
             width: 180px;
             padding: 6px;
             border-radius: 12px;
             background: white;
             border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.14);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
             gap: 3px;
@@ -1118,9 +1132,10 @@
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 6px;
-            color: #666666;
-            font-size: 0.86rem;
+            gap: 4px;
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 14px;
         }
 
         .drive-breadcrumb {
@@ -1128,13 +1143,13 @@
             background: transparent;
             color: inherit;
             cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 8px;
+            padding: 3px 8px;
+            border-radius: 6px;
             font-family: inherit;
         }
 
         .drive-breadcrumb:hover {
-            background: rgba(0,0,0,0.06);
+            background: rgba(0,0,0,0.05);
         }
 
         @media (max-width: 720px) {
@@ -1144,11 +1159,9 @@
             .drive-actions { gap: 6px; }
             .drive-btn { min-height: 36px; padding: 8px 10px; font-size: 0.82rem; }
             .drive-icon-btn { width: 36px; height: 36px; }
-            .drive-main { padding: 16px; gap: 20px; }
-            .drive-file-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-            .drive-recents .drive-card { min-width: 156px; flex-basis: 156px; }
-            .drive-card { min-height: 156px; }
-            .drive-card-preview { height: 88px; }
+            .drive-main { padding: 16px 16px 72px; }
+            .drive-file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+            .drive-recents .drive-card { min-width: 140px; flex-basis: 140px; }
             .drive-fab-wrap { right: 16px; bottom: 16px; }
             .drive-fab { width: 56px; height: 56px; border-radius: 16px; }
         }
