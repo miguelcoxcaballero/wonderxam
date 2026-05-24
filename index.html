@@ -732,34 +732,61 @@
         }
 
         .drive-section-title {
-            font-size: 0.72rem;
+            font-size: 0.94rem;
             font-weight: 700;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
+            color: #666;
         }
 
-        .drive-recents,
+        .drive-folder-grid,
         .drive-file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .drive-folder-grid {
+            margin-bottom: 18px;
+        }
+
+        .drive-folder-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 42px 12px 14px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            position: relative;
+            transition: box-shadow 0.18s ease;
+        }
+
+        .drive-folder-card:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.09);
+        }
+
+        .drive-folder-card.drag-over {
+            box-shadow: 0 0 0 2px #7c3aed, 0 6px 20px rgba(124,58,237,0.18);
+        }
+
+        .drive-folder-card[draggable="true"] { cursor: grab; }
+        .drive-folder-card[draggable="true"]:active { cursor: grabbing; }
+
+        .drive-folder-icon {
+            width: 36px;
+            min-width: 36px;
+            height: 28px;
+            color: #d97736;
+            flex: 0 0 auto;
+        }
+
+        .drive-recents {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 12px;
         }
 
-        .drive-recents {
-            display: flex;
-            overflow-x: auto;
-            padding-bottom: 6px;
-            scroll-snap-type: x mandatory;
-            scrollbar-width: thin;
-            scrollbar-color: #dadce0 transparent;
-        }
-
-        .drive-recents .drive-card {
-            min-width: 160px;
-            flex: 0 0 160px;
-            scroll-snap-align: start;
-        }
 
         .drive-card {
             position: relative;
@@ -845,6 +872,7 @@
         }
 
         .drive-card:hover .drive-card-more,
+        .drive-folder-card:hover .drive-card-more,
         .drive-card-more:focus {
             opacity: 1;
         }
@@ -1160,8 +1188,7 @@
             .drive-btn { min-height: 36px; padding: 8px 10px; font-size: 0.82rem; }
             .drive-icon-btn { width: 36px; height: 36px; }
             .drive-main { padding: 16px 16px 72px; }
-            .drive-file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-            .drive-recents .drive-card { min-width: 140px; flex-basis: 140px; }
+            .drive-folder-grid, .drive-file-grid, .drive-recents { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
             .drive-fab-wrap { right: 16px; bottom: 16px; }
             .drive-fab { width: 56px; height: 56px; border-radius: 16px; }
         }
@@ -2867,9 +2894,10 @@
 
         const FolderCard = ({ folder, onOpen, onDelete, onColor, onMove, onDragStart, onDropItem }) => {
             const [isDragOver, setIsDragOver] = useState(false);
+            const accentColor = folder.folderColorRgb || '#d97736';
             return (
                 <div
-                    className={`drive-card folder${isDragOver ? ' drag-over' : ''}`}
+                    className={`drive-folder-card${isDragOver ? ' drag-over' : ''}`}
                     role="button"
                     tabIndex={0}
                     draggable
@@ -2881,12 +2909,12 @@
                     onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsDragOver(false); }}
                     onDrop={(e) => { e.preventDefault(); setIsDragOver(false); onDropItem?.(folder); }}
                 >
-                    <div className="drive-card-preview" style={folder.folderColorRgb ? { background: folder.folderColorRgb, color: '#ffffff' } : undefined}>
-                        <MatIcon name="folder" className="text-[46px]" />
-                    </div>
-                    <div>
-                        <div className="drive-card-title">{folder.name || 'Folder'}</div>
-                        <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime) || 'Folder'}</div>
+                    <svg className="drive-folder-icon" viewBox="0 0 24 24" fill="currentColor" style={{ color: accentColor }}>
+                        <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/>
+                    </svg>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="drive-card-title" style={{ paddingRight: 0 }}>{folder.name || 'Folder'}</div>
+                        {folder.modifiedTime && <div className="drive-card-meta">{formatDriveDate(folder.modifiedTime)}</div>}
                     </div>
                     <DriveItemMenu item={folder} type="folder" onDelete={onDelete} onColor={onColor} onMove={onMove} />
                 </div>
@@ -3183,39 +3211,47 @@
                             <div className="drive-section-header">
                                 <div className="drive-section-title">My Drive</div>
                             </div>
-                            {(drive.folders.length || filteredFiles.length) ? (
-                                <div className="drive-file-grid">
-                                    {drive.folders.map(folder => (
-                                        <FolderCard
-                                            key={folder.id}
-                                            folder={folder}
-                                            onOpen={(folder) => drive.enterFolder(folder, search)}
-                                            onDelete={requestDelete}
-                                            onColor={updateColor}
-                                            onMove={(item) => setMoveTarget(item)}
-                                            onDragStart={(item) => { draggedItemRef.current = item; }}
-                                            onDropItem={(targetFolder) => {
-                                                const dragged = draggedItemRef.current;
-                                                if (dragged && dragged.id !== targetFolder.id) {
-                                                    drive.moveItem(dragged, targetFolder.id);
-                                                }
-                                                draggedItemRef.current = null;
-                                            }}
-                                        />
-                                    ))}
-                                    {filteredFiles.map(file => (
-                                        <DriveCard
-                                            key={file.id}
-                                            file={file}
-                                            onOpen={onOpen}
-                                            onDelete={requestDelete}
-                                            onMove={(item) => setMoveTarget(item)}
-                                            onDragStart={(item) => { draggedItemRef.current = item; }}
-                                        />
-                                    ))}
-                                </div>
+                            {(drive.folders.length === 0 && filteredFiles.length === 0) ? (
+                                <div className="drive-empty">{drive.loading ? 'Loading...' : 'No folders or exams here yet.'}</div>
                             ) : (
-                                <div className="drive-empty">{drive.loading ? 'Loading items...' : 'No folders or Wonderxam exams found here.'}</div>
+                                <>
+                                    {drive.folders.length > 0 && (
+                                        <div className="drive-folder-grid">
+                                            {drive.folders.map(folder => (
+                                                <FolderCard
+                                                    key={folder.id}
+                                                    folder={folder}
+                                                    onOpen={(folder) => drive.enterFolder(folder, search)}
+                                                    onDelete={requestDelete}
+                                                    onColor={updateColor}
+                                                    onMove={(item) => setMoveTarget(item)}
+                                                    onDragStart={(item) => { draggedItemRef.current = item; }}
+                                                    onDropItem={(targetFolder) => {
+                                                        const dragged = draggedItemRef.current;
+                                                        if (dragged && dragged.id !== targetFolder.id) {
+                                                            drive.moveItem(dragged, targetFolder.id);
+                                                        }
+                                                        draggedItemRef.current = null;
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                    {filteredFiles.length > 0 && (
+                                        <div className="drive-file-grid">
+                                            {filteredFiles.map(file => (
+                                                <DriveCard
+                                                    key={file.id}
+                                                    file={file}
+                                                    onOpen={onOpen}
+                                                    onDelete={requestDelete}
+                                                    onMove={(item) => setMoveTarget(item)}
+                                                    onDragStart={(item) => { draggedItemRef.current = item; }}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </section>
                     </div>
